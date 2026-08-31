@@ -1,1 +1,40 @@
-/* Escape hatch for styling beyond tokens.css — keep it empty until a need cannot be expressed with a token. */
+/*
+ * Legacy treatments that tokens cannot express — keep this file short;
+ * anything a token can say, say with a token (theme/tokens.css).
+ */
+
+/* Nav links are solid blocks with an alternating darker background and a gold
+ * hover, matching the old Sharing History red bar. */
+.mwnf-nav__link {
+  display: inline-block;
+  padding: 0.5rem 1.25rem;
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.mwnf-nav__links li:nth-child(even) .mwnf-nav__link {
+  background: #750101;
+}
+.mwnf-nav__link:hover {
+  color: var(--mwnf-nav-link-active-color, #e0b700);
+  background: rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+}
+.mwnf-nav__language {
+  padding-inline: 0.5rem;
+}
+/* The switcher label inherits the page text color, which is unreadable on the
+ * red bar; the select keeps its own light background and dark text. */
+.mwnf-nav__language-label {
+  color: var(--mwnf-nav-link-color, #ffffff);
+}
+
+/* The legacy header carries a 3px rule in the darker red under the bar. */
+.mwnf-header {
+  border-bottom: 3px solid #500101;
+}
+
+.mwnf-footer {
+  text-align: center;
+}
