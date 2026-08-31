@@ -1,30 +1,23 @@
 import languagesData from '@inventory-data/languages.json'
 import SiteShell from './SiteShell.vue'
+import { OFFERED_LANGUAGES } from './languages.js'
 
-// Content languages — the items-driven rule (#7): the site offers exactly the
-// languages the item records are translated into, derived from the
-// items.<lang>.json files present in the installed data package. Never derive
-// this from manifest.languages: it declares eighteen languages, most of which
-// have no translation file of any kind. Offering one of those would put a
-// language in the switcher whose item sheets are all English — the legacy
-// viewer's bug.
+// Content languages: what the site chooses to offer (languages.js), narrowed
+// to what the installed data package can actually serve — the languages with
+// an items.<lang>.json file. Never derive this from manifest.languages, which
+// declares eighteen languages, most without a translation file of any kind;
+// offering one of those would put a language in the switcher whose item sheets
+// are all English, the legacy viewer's bug.
 //
-// The cost is real and worth naming: some entities are translated into
-// languages the items are not, so that text is not reachable from the
-// switcher. The alternative is worse — a switcher full of languages that
-// change almost nothing on the page a visitor is most often looking at.
-// Entities not covered in the active language fall back per entity to English.
-// English first, the rest sorted.
+// Entities not covered in the active language fall back per entity to English,
+// so a page is never blank.
 const itemTranslationFiles = import.meta.glob('@inventory-data/translations/items.*.json')
 const itemLangs = new Set(
   Object.keys(itemTranslationFiles)
     .map((path) => path.match(/items\.([a-z]{2})\.json$/)?.[1])
     .filter(Boolean),
 )
-const languages = [
-  ...(itemLangs.has('en') ? ['en'] : []),
-  ...[...itemLangs].filter((l) => l !== 'en').sort(),
-]
+const languages = OFFERED_LANGUAGES.filter((code) => itemLangs.has(code))
 
 // Native display name for the language switcher, from the data package's
 // language table (falls back to the English name, then the raw code).

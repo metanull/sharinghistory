@@ -7,6 +7,7 @@ import partnersData from '@inventory-data/partners.json'
 import timelinesData from '@inventory-data/timelines.json'
 import timelineEventsData from '@inventory-data/timeline_events.json'
 import collectionsData from '@inventory-data/collections.json'
+import { OFFERED_LANGUAGES } from '../languages.js'
 
 // Module-level singletons — loaded once, shared across all views
 const items = ref(itemsData)
@@ -15,24 +16,19 @@ const partners = ref(partnersData)
 const timelines = ref(timelinesData)
 const timelineEvents = ref(timelineEventsData)
 const collections = ref(collectionsData)
-// Offered content languages — the items-driven rule (#7): exactly the
-// languages the item records are translated into, derived from the
-// items.<lang>.json files present in the installed package. Never from
+// Offered content languages: the site's own list (src/languages.js) narrowed
+// to the languages the installed package has item translations for. Never from
 // manifest.languages, which declares far more languages than have any item
-// content: offering one of those puts a language in the switcher whose item
-// sheets are all English, which is the legacy viewer's bug. The website's
-// dataset.config.js derives the same list for the switcher, with its own lazy
-// glob so the config module does not pull this file's eager JSON into the
-// entry chunk. Entities not covered in the active language fall back per
-// entity to English. English first, the rest sorted.
+// content. dataset.config.js computes the same intersection for the switcher
+// with its own lazy glob, so the config module does not pull this file's eager
+// JSON into the entry chunk — the shared constant is what keeps the two in
+// step. Entities not covered in the active language fall back per entity to
+// English.
 const itemTranslationLoaders = import.meta.glob('@inventory-data/translations/items.*.json')
 const itemLangCodes = Object.keys(itemTranslationLoaders)
   .map(path => path.match(/items\.([a-z]{2})\.json$/)?.[1])
   .filter(Boolean)
-const availableLangs = ref([
-  ...(itemLangCodes.includes('en') ? ['en'] : []),
-  ...itemLangCodes.filter(l => l !== 'en').sort(),
-])
+const availableLangs = ref(OFFERED_LANGUAGES.filter(code => itemLangCodes.includes(code)))
 const defaultLang = 'en'
 
 // Legacy project key (e.g. 'ISL', 'EPM') by project UUID — manifest.json's
