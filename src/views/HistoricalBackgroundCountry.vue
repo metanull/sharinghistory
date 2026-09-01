@@ -89,7 +89,7 @@ const pageItems = computed(() => {
 
 <template>
   <div v-if="!record" class="content-box not-found">
-    <p>Historical profile not found.</p>
+    <p>{{ $t('sharinghistory.notFound.profile') }}</p>
     <router-link to="/historical-profiles">← Return to Historical Profiles</router-link>
   </div>
 
@@ -103,11 +103,14 @@ const pageItems = computed(() => {
 
       <div v-if="pages.length" class="page-nav-row">
         <button class="page-nav-btn" :disabled="activePageIndex === 0" @click="goToPage(activePageIndex - 1)">
-          ← Previous page
+          ← {{ $t('sharinghistory.action.previousPage') }}
         </button>
-        <span class="page-nav-count">Page {{ activePageIndex + 1 }} of {{ pages.length }}</span>
+        <!-- Was "Page N of M". The word stays, the "of" goes: the position
+             reads as plainly beside it as it did inside the phrase, and "of"
+             alone is not a text a translator can do anything with. -->
+        <span class="page-nav-count">{{ $t('sharinghistory.exhibition.page') }} {{ activePageIndex + 1 }} / {{ pages.length }}</span>
         <button class="page-nav-btn" :disabled="activePageIndex === pages.length - 1" @click="goToPage(activePageIndex + 1)">
-          Next page →
+          {{ $t('sharinghistory.action.nextPage') }} →
         </button>
       </div>
 
@@ -126,7 +129,7 @@ const pageItems = computed(() => {
         </div>
 
         <div v-if="pageItems.length" class="hb-item-row">
-          <h3 class="hb-item-heading">Related items</h3>
+          <h3 class="hb-item-heading">{{ $t('sharinghistory.related.items') }}</h3>
           <div class="hb-item-grid">
             <RouterLink
               v-for="item in pageItems"
@@ -144,24 +147,24 @@ const pageItems = computed(() => {
 
       <!-- Legacy hb_result.php "Related Content" box -->
       <div class="hb-related">
-        <h3 class="hb-item-heading">Related Content</h3>
+        <h3 class="hb-item-heading">{{ $t('sharinghistory.related.title') }}</h3>
         <ul class="hb-related-list">
-          <li><RouterLink to="/historical-background">Historical Background</RouterLink></li>
+          <li><RouterLink to="/historical-background">{{ $t('sharinghistory.nav.historicalBackground') }}</RouterLink></li>
           <li v-if="record.country_id">
             <RouterLink
               :to="{ path: '/timeline/results', query: { country: record.country_id, exhibition: 'pc' } }"
             >
-              Political Context Timeline {{ countryLabel(record.country_id) }}
+              {{ $t('sharinghistory.related.politicalContextTimeline') }} {{ countryLabel(record.country_id) }}
             </RouterLink>
           </li>
-          <li v-if="bibliography"><a href="#hb-bibliography">Bibliography</a></li>
-          <li v-if="record.images?.length"><a href="#hb-maps">View Map(s)</a></li>
+          <li v-if="bibliography"><a href="#hb-bibliography">{{ $t('sharinghistory.history.bibliography') }}</a></li>
+          <li v-if="record.images?.length"><a href="#hb-maps">{{ $t('sharinghistory.history.viewMaps') }}</a></li>
         </ul>
       </div>
 
       <!-- Record-level images are the legacy historical maps -->
       <div v-if="record.images?.length" id="hb-maps" class="hb-maps">
-        <h3 class="hb-item-heading">Maps</h3>
+        <h3 class="hb-item-heading">{{ $t('sharinghistory.history.maps') }}</h3>
         <div class="hb-image-strip">
           <img
             v-for="(img, idx) in record.images"
@@ -174,7 +177,7 @@ const pageItems = computed(() => {
       </div>
 
       <div v-if="bibliography" id="hb-bibliography" class="hb-bibliography">
-        <h3 class="hb-item-heading">Bibliography</h3>
+        <h3 class="hb-item-heading">{{ $t('sharinghistory.history.bibliography') }}</h3>
         <div class="prose" v-html="md(bibliography)" />
       </div>
     </div>

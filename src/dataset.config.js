@@ -10,7 +10,13 @@ import { OFFERED_LANGUAGES } from './languages.js'
 // are all English, the legacy viewer's bug.
 //
 // Entities not covered in the active language fall back per entity to English,
-// so a page is never blank.
+// so a page is never blank. The interface chrome falls back the same way, from
+// whatever the dictionary has for the language down to English.
+//
+// The order is `languages.js`'s own and is only the order of the switcher: the
+// site used to open at `languages[0]`, and viewer-core negotiates the opening
+// language now — an explicit `?lang=`, then the visitor's remembered choice,
+// then their browser, then English.
 const itemTranslationFiles = import.meta.glob('@inventory-data/translations/items.*.json')
 const itemLangs = new Set(
   Object.keys(itemTranslationFiles)
@@ -42,25 +48,17 @@ export default {
     entities: [],
   },
 
-  // vue-i18n locale doubles as the content language; 'en' first so it is the
-  // initial locale.
+  // The site language, which doubles as the content language; 'en' first so it
+  // is the initial one.
   languages,
 
   shell: SiteShell,
+
+  // Only what is not a text. The menu labels and the footer line are texts, so
+  // they are built in SiteShell.vue where the catalogue is installed; the
+  // language names below come from the data package, not from a translator.
   navigation: {
-    // The legacy site's own top-level sections, in its own order.
-    navLinks: [
-      { label: 'Home', href: '#/' },
-      { label: 'Exhibitions', href: '#/exhibitions' },
-      { label: 'Permanent Collection', href: '#/permanent-collection' },
-      { label: 'Database', href: '#/database' },
-      { label: 'Timeline', href: '#/timeline' },
-      { label: 'Historical Background', href: '#/historical-background' },
-      { label: 'Historical Profiles', href: '#/historical-profiles' },
-      { label: 'Partners', href: '#/partners' },
-    ],
     languages: languages.map((code) => ({ code, label: languageLabel(code) })),
-    footerText: '© Museum With No Frontiers (MWNF) 2004 – 2026',
   },
 
   // The full legacy route map, one view per page. The 'home' name replaces

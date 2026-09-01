@@ -71,12 +71,12 @@ function back() {
 
 <template>
   <div v-if="!exhibition" class="content-box not-found">
-    <p>Exhibition not found.</p>
-    <router-link to="/exhibitions">← Return to Exhibitions</router-link>
+    <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
+    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
   </div>
 
   <div v-else>
-    <a class="back-link" href="#" @click.prevent="back">← Back to Exhibitions</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backLink') }}</a>
 
     <h1 class="section-heading" v-html="mdInline(text.title ?? exhibition.internal_name)" />
 
@@ -93,7 +93,7 @@ function back() {
           class="theme-row"
           @click="$router.push(`/exhibitions/${exhibition.id}/introduction`)"
         >
-          <span class="theme-name">About the Exhibition</span>
+          <span class="theme-name">{{ $t('sharinghistory.exhibition.introduction') }}</span>
           <span class="theme-arrow">→</span>
         </li>
         <li
@@ -106,31 +106,31 @@ function back() {
           <span class="theme-arrow">→</span>
         </li>
       </ul>
-      <p v-if="!hasIntroduction && !themeList.length" class="no-results">No content available for this exhibition yet.</p>
+      <p v-if="!hasIntroduction && !themeList.length" class="no-results">{{ $t('sharinghistory.exhibition.empty') }}</p>
     </div>
 
     <!-- Legacy exhibition homepage "Related Content" box -->
     <div class="content-box related-box">
-      <h3 class="related-heading">Related Content</h3>
+      <h3 class="related-heading">{{ $t('sharinghistory.related.title') }}</h3>
       <ul class="related-list">
         <li>
           <router-link :to="{ path: '/timeline/results', query: { exhibition: 'pc' } }">
-            Political Context Timeline
+            {{ $t('sharinghistory.related.politicalContextTimeline') }}
           </router-link>
         </li>
         <li v-if="hasThematicTimeline">
           <router-link :to="{ path: '/timeline/results', query: { exhibition: exhibition.id } }">
-            Thematic Timeline
+            {{ $t('sharinghistory.related.thematicTimeline') }}
           </router-link>
         </li>
         <li>
           <router-link :to="{ path: '/permanent-collection/results', query: { exhibition: exhibition.id } }">
-            See Gallery for this Theme
+            {{ $t('sharinghistory.related.seeGalleryForTheme') }}
           </router-link>
         </li>
         <li v-if="hasFurtherReading">
           <router-link :to="`/exhibitions/${exhibition.id}/further-reading`">
-            Further Reading
+            {{ $t('sharinghistory.exhibition.furtherReadingHeading') }}
           </router-link>
         </li>
       </ul>

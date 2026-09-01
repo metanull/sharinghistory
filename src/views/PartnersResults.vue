@@ -1,11 +1,15 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const { partners, countryLabel, partnerLabel, enPartnerTranslations } = useInventoryData()
+const { t } = useI18n()
 
 // SH has a single Partners concept (no museum/institution split — the
-// legacy pm_partner_list.php lists ALL sh_partners grouped by country).
+// legacy pm_partner_list.php lists ALL sh_partners grouped by country), and no
+// second curated list to switch to, so there is no type heading and no
+// "view … instead" link here.
 // Like legacy's INNER JOINs on sh_partner_names + mwnf3.countrynames, only
 // partners with a name translation AND a country are listed — this
 // reproduces the live site's 114-partner list (27 main + 87 associated) out
@@ -29,7 +33,7 @@ const groupedByCountry = computed(() => {
   return [...countries.entries()]
     .map(([countryId, group]) => ({
       countryId,
-      name: countryId ? countryLabel(countryId) : 'Other',
+      name: countryId ? countryLabel(countryId) : t('sharinghistory.results.otherCountry'),
       main: group.main.sort((a, b) => partnerLabel(a.id).localeCompare(partnerLabel(b.id))),
       associated: group.associated.sort((a, b) => partnerLabel(a.id).localeCompare(partnerLabel(b.id))),
     }))
@@ -47,16 +51,16 @@ function partnerLink(partner) {
 
 <template>
   <div>
-    <RouterLink to="/partners" class="back-link">‹ Back to Partners</RouterLink>
+    <RouterLink to="/partners" class="back-link">‹ {{ $t('sharinghistory.partner.backLink') }}</RouterLink>
 
     <h1 class="section-heading">
-      Partners
-      <span class="heading-project"> — Sharing History</span>
+      {{ $t('sharinghistory.nav.partners') }}
+      <span class="heading-project"> — {{ $t('sharinghistory.identity.title') }}</span>
     </h1>
 
     <div class="content-box">
       <p class="result-count">
-        {{ totalCount }} partner{{ totalCount !== 1 ? 's' : '' }} found
+        {{ $t('sharinghistory.results.partnersFound') }}: {{ totalCount }}
       </p>
 
       <div v-if="groupedByCountry.length" class="country-accordion">
@@ -73,7 +77,7 @@ function partnerLink(partner) {
             </div>
 
             <div v-if="group.associated.length" class="partner-col associated-col">
-              <p class="associated-label">Associated Partners</p>
+              <p class="associated-label">{{ $t('sharinghistory.partner.associatedPartners') }}</p>
               <p v-for="p in group.associated" :key="p.id">
                 <RouterLink :to="partnerLink(p)">{{ partnerLabel(p.id) }}</RouterLink>
               </p>
@@ -82,7 +86,7 @@ function partnerLink(partner) {
         </details>
       </div>
 
-      <p v-else class="no-results">No partners found.</p>
+      <p v-else class="no-results">{{ $t('sharinghistory.partner.noPartners') }}</p>
     </div>
   </div>
 </template>

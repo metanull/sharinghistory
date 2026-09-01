@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const {
   timelines, timelineEvents, countryLabel, enTimelineEventTranslations, md,
   exhibitions, enCollectionTranslations, itemById, itemLabel,
@@ -176,65 +178,67 @@ function itemsLink(event) {
   return { path: '/permanent-collection/results', query: q }
 }
 
+// null when nothing is filtered: the heading's suffix depends on there being a
+// filter, not on a comparison against a text that changes with the language.
 const activeFilterLabel = computed(() => {
   const parts = []
   if (filterCountry.value) parts.push(countryLabel(filterCountry.value))
-  if (filterBegin.value) parts.push(`from ${filterBegin.value}`)
-  if (filterEnd.value) parts.push(`to ${filterEnd.value}`)
-  return parts.length ? parts.join(' — ') : 'All Periods'
+  if (filterBegin.value) parts.push(`${t('sharinghistory.filter.from')} ${filterBegin.value}`)
+  if (filterEnd.value) parts.push(`${t('sharinghistory.filter.to')} ${filterEnd.value}`)
+  return parts.length ? parts.join(' — ') : null
 })
 </script>
 
 <template>
   <div>
-    <RouterLink to="/timeline" class="back-link">‹ Back to Timeline</RouterLink>
+    <RouterLink to="/timeline" class="back-link">‹ {{ $t('sharinghistory.timeline.backLink') }}</RouterLink>
 
     <h1 class="section-heading">
-      Timeline
-      <span v-if="activeFilterLabel !== 'All Periods'" class="heading-filter"> — {{ activeFilterLabel }}</span>
+      {{ $t('sharinghistory.nav.timeline') }}
+      <span v-if="activeFilterLabel" class="heading-filter"> — {{ activeFilterLabel }}</span>
     </h1>
 
     <!-- Filter panel -->
     <div class="content-box filter-panel">
-      <strong class="filter-label">Filter:</strong>
+      <strong class="filter-label">{{ $t('sharinghistory.filter.heading') }}</strong>
 
       <div class="filter-row">
-        <label>Country</label>
+        <label>{{ $t('sharinghistory.filter.country') }}</label>
         <select v-model="filterCountry" style="width:200px">
-          <option value="">— any —</option>
+          <option value="">{{ $t('sharinghistory.filter.any') }}</option>
           <option v-for="c in availableCountries" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
       </div>
 
       <div class="filter-row">
-        <label>Timeline</label>
+        <label>{{ $t('sharinghistory.nav.timeline') }}</label>
         <select v-model="filterExhibition" style="width:200px">
-          <option value="">— all —</option>
-          <option value="pc">Permanent Collection</option>
+          <option value="">{{ $t('sharinghistory.filter.all') }}</option>
+          <option value="pc">{{ $t('sharinghistory.nav.permanentCollection') }}</option>
           <option v-for="e in availableExhibitions" :key="e.id" :value="e.id">{{ e.name }}</option>
         </select>
       </div>
 
       <div class="filter-row">
-        <label>From year</label>
-        <input type="number" v-model="filterBegin" placeholder="e.g. 800" style="width:100px" />
+        <label>{{ $t('sharinghistory.filter.fromYear') }}</label>
+        <input type="number" v-model="filterBegin" :placeholder="$t('sharinghistory.filter.fromYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-row">
-        <label>To year</label>
-        <input type="number" v-model="filterEnd" placeholder="e.g. 1400" style="width:100px" />
+        <label>{{ $t('sharinghistory.filter.toYear') }}</label>
+        <input type="number" v-model="filterEnd" :placeholder="$t('sharinghistory.filter.toYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-actions">
-        <button class="btn" @click="applyFilters">Apply</button>
-        <button class="btn btn-secondary" style="margin-left:8px" @click="resetFilters">Reset</button>
+        <button class="btn" @click="applyFilters">{{ $t('sharinghistory.action.apply') }}</button>
+        <button class="btn btn-secondary" style="margin-left:8px" @click="resetFilters">{{ $t('sharinghistory.action.reset') }}</button>
       </div>
     </div>
 
     <!-- Results -->
     <div class="content-box">
       <p class="result-count">
-        {{ filteredEvents.length }} event{{ filteredEvents.length !== 1 ? 's' : '' }} found
+        {{ $t('sharinghistory.results.eventsFound') }}: {{ filteredEvents.length }}
       </p>
 
       <ul v-if="pagedEvents.length" class="timeline-list">
@@ -267,26 +271,26 @@ const activeFilterLabel = computed(() => {
                 <img v-if="item.images?.length" :src="item.images[0].url" :alt="itemLabel(item)" loading="lazy" />
                 <span class="timeline-media-caption">
                   {{ itemLabel(item) }}
-                  <span class="timeline-media-see">See Database Entry →</span>
+                  <span class="timeline-media-see">{{ $t('sharinghistory.action.seeDatabaseEntry') }} →</span>
                 </span>
               </RouterLink>
             </div>
 
             <RouterLink :to="itemsLink(event)" class="timeline-items-link">
-              View items from this period →
+              {{ $t('sharinghistory.action.viewItemsFromPeriod') }} →
             </RouterLink>
           </div>
         </li>
       </ul>
 
-      <p v-else class="no-results">No events match the selected filter.</p>
+      <p v-else class="no-results">{{ $t('sharinghistory.results.noEvents') }}</p>
 
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="pagination">
         <span class="pagination-info">
-          Page {{ currentPage }} of {{ totalPages }}
+          {{ currentPage }} / {{ totalPages }}
         </span>
-        <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">‹ Prev</button>
+        <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">‹ {{ $t('core.pagination.previous') }}</button>
         <template v-for="p in totalPages" :key="p">
           <button
             v-if="Math.abs(p - currentPage) <= 3 || p === 1 || p === totalPages"
@@ -296,7 +300,7 @@ const activeFilterLabel = computed(() => {
           >{{ p }}</button>
           <span v-else-if="Math.abs(p - currentPage) === 4" class="page-ellipsis">…</span>
         </template>
-        <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">Next ›</button>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">{{ $t('core.pagination.next') }} ›</button>
       </div>
     </div>
   </div>

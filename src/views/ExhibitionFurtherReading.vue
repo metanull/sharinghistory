@@ -62,7 +62,7 @@ function back() {
 
 <template>
   <div v-if="!exhibition" class="content-box not-found">
-    <p>Exhibition not found.</p>
+    <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
     <router-link to="/exhibitions">← Return to Exhibitions</router-link>
   </div>
 
@@ -70,13 +70,13 @@ function back() {
     <a class="back-link" href="#" @click.prevent="back">← Back to {{ text.title ?? exhibition.internal_name }}</a>
 
     <div class="content-box">
-      <h1 class="reading-title">Further Reading</h1>
+      <h1 class="reading-title">{{ $t('sharinghistory.exhibition.furtherReadingHeading') }}</h1>
       <h2 class="reading-subtitle" v-html="mdInline(text.title ?? exhibition.internal_name)" />
 
       <div v-if="entries.length" class="reading-entries" :dir="contentDir">
         <div v-for="(entry, i) in entries" :key="i" class="reading-entry prose" v-html="md(entry)" />
       </div>
-      <p v-else class="no-results">No bibliography available for this exhibition.</p>
+      <p v-else class="no-results">{{ $t('sharinghistory.exhibition.noBibliography') }}</p>
     </div>
   </div>
 </template>

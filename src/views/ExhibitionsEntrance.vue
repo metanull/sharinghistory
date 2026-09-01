@@ -14,16 +14,14 @@ const exhibitionList = computed(() =>
 
 <template>
   <div v-if="!exhibitionList.length" class="content-box not-found">
-    <p>No exhibitions available.</p>
+    <p>{{ $t('sharinghistory.notFound.exhibitions') }}</p>
   </div>
 
   <div v-else>
-    <h1 class="section-heading">Exhibitions</h1>
+    <h1 class="section-heading">{{ $t('sharinghistory.nav.exhibitions') }}</h1>
 
     <div class="content-box">
-      <p class="intro-text">
-        Select an exhibition below to explore its themes, monuments, and objects.
-      </p>
+      <p class="intro-text">{{ $t('sharinghistory.exhibition.selectPrompt') }}</p>
       <ul class="theme-list">
         <li
           v-for="e in exhibitionList"

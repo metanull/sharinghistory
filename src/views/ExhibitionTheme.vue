@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
@@ -120,13 +120,13 @@ function back() {
 
 <template>
   <div v-if="!theme" class="content-box not-found">
-    <p>Theme not found.</p>
-    <router-link v-if="exhibition" :to="`/exhibitions/${exhibition.id}`">← Return to exhibition</router-link>
-    <router-link v-else to="/exhibitions">← Return to Exhibitions</router-link>
+    <p>{{ $t('sharinghistory.notFound.theme') }}</p>
+    <router-link v-if="exhibition" :to="`/exhibitions/${exhibition.id}`">← {{ $t('sharinghistory.exhibition.returnToExhibition') }}</router-link>
+    <router-link v-else to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
   </div>
 
   <div v-else class="theme-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← Back to {{ resolveTitle(exhibition.id, exhibition.internal_name) }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ resolveTitle(exhibition.id, exhibition.internal_name) }}</a>
 
     <div class="content-box">
       <h1 class="theme-title" v-html="mdInline(resolveTitle(theme.id, theme.internal_name))" />
@@ -138,7 +138,7 @@ function back() {
           <div v-if="collectionText(theme.id).description" class="prose" v-html="md(collectionText(theme.id).description)" />
 
           <div v-if="chapters.length" class="chapter-list">
-            <h2 class="chapter-list-heading">Chapters</h2>
+            <h2 class="chapter-list-heading">{{ $t('sharinghistory.exhibition.chapters') }}</h2>
             <RouterLink
               v-for="(chapter, idx) in chapters"
               :key="chapter.id"
@@ -147,7 +147,7 @@ function back() {
             >
               <span class="chapter-num">{{ idx + 1 }}</span>
               <span class="chapter-name" v-html="mdInline(resolveTitle(chapter.id, chapter.internal_name))" />
-              <span class="chapter-count" v-if="chapter.items?.length">{{ chapter.items.length }} items</span>
+              <span class="chapter-count" v-if="chapter.items?.length">{{ chapter.items.length }} {{ $t('sharinghistory.results.items') }}</span>
             </RouterLink>
           </div>
         </div>
@@ -165,15 +165,15 @@ function back() {
             <p v-if="selectedDisplay.location" class="item-detail-meta">{{ selectedDisplay.location }}</p>
             <p v-if="selectedDisplay.museum" class="item-detail-meta">{{ selectedDisplay.museum }}</p>
             <p v-if="selectedDisplay.justificationCurator" class="item-detail-justification">
-              <span class="just-label">Curator's justification</span>
+              <span class="just-label">{{ $t('sharinghistory.exhibition.curatorJustification') }}</span>
               <span v-html="mdInline(selectedDisplay.justificationCurator)" />
             </p>
             <p v-if="selectedDisplay.justificationPartner" class="item-detail-justification">
-              <span class="just-label">Partner's justification</span>
+              <span class="just-label">{{ $t('sharinghistory.exhibition.partnerJustification') }}</span>
               <span v-html="mdInline(selectedDisplay.justificationPartner)" />
             </p>
             <RouterLink :to="`/item/${encodeURIComponent(selected.item.id)}`" class="more-info-link">
-              More info →
+              {{ $t('sharinghistory.action.moreInfo') }} →
             </RouterLink>
           </div>
 

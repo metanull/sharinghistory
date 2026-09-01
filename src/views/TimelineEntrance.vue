@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { I18nText, useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const router = useRouter()
+const { t } = useI18n()
 const { timelines, timelineEvents, countryLabel, exhibitions, enCollectionTranslations } = useInventoryData()
 
 // Countries available in the timeline data (SH: one timeline per
@@ -55,11 +57,11 @@ function search() {
   errorMessage.value = ''
 
   if (!selectedCountry.value && !(selectedBegin.value && selectedEnd.value)) {
-    errorMessage.value = 'Please select a country, or a start and end date.'
+    errorMessage.value = t('sharinghistory.timeline.errorSelect')
     return
   }
   if (selectedBegin.value && selectedEnd.value && Number(selectedBegin.value) >= Number(selectedEnd.value)) {
-    errorMessage.value = 'Please select a valid time period (start must be before end).'
+    errorMessage.value = t('sharinghistory.timeline.errorPeriod')
     return
   }
 
@@ -74,59 +76,55 @@ function search() {
 
 <template>
   <div>
-    <h1 class="section-heading">Timeline</h1>
+    <h1 class="section-heading">{{ $t('sharinghistory.nav.timeline') }}</h1>
 
     <div class="content-box">
-      <p class="intro-text">
-        Explore historical events of the period 1815 – 1918. Select a country
-        and/or a time period, choose the Permanent Collection timeline or one
-        of the thematic exhibition timelines, then click <strong>Go</strong>.
-      </p>
+      <I18nText tag="p" class="intro-text" keypath="sharinghistory.timeline.intro" />
 
       <table class="form-table filter-table">
         <tbody>
           <tr>
-            <th><label for="tl-country">Country</label></th>
+            <th><label for="tl-country">{{ $t('sharinghistory.filter.country') }}</label></th>
             <td>
               <select id="tl-country" v-model="selectedCountry" style="width:280px">
-                <option value="" disabled>Select a Country</option>
-                <option value="all">— All Countries —</option>
+                <option value="" disabled>{{ $t('sharinghistory.timeline.selectCountry') }}</option>
+                <option value="all">{{ $t('sharinghistory.timeline.allCountries') }}</option>
                 <option v-for="c in availableCountries" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </td>
           </tr>
           <tr>
-            <th><label for="tl-exh">Timeline</label></th>
+            <th><label for="tl-exh">{{ $t('sharinghistory.nav.timeline') }}</label></th>
             <td>
               <select id="tl-exh" v-model="selectedExhibition" style="width:280px">
-                <option value="pc">Permanent Collection</option>
-                <option value="">— All thematic timelines —</option>
+                <option value="pc">{{ $t('sharinghistory.nav.permanentCollection') }}</option>
+                <option value="">{{ $t('sharinghistory.timeline.allThematic') }}</option>
                 <option v-for="e in availableExhibitions" :key="e.id" :value="e.id">{{ e.name }}</option>
               </select>
             </td>
           </tr>
           <tr>
-            <th><label for="tl-begin">Start Date</label></th>
+            <th><label for="tl-begin">{{ $t('sharinghistory.timeline.startDate') }}</label></th>
             <td>
               <select id="tl-begin" v-model="selectedBegin" style="width:160px">
-                <option value="">— none —</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} AD</option>
+                <option value="">{{ $t('sharinghistory.filter.none') }}</option>
+                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('sharinghistory.timeline.yearSuffix') }}</option>
               </select>
             </td>
           </tr>
           <tr>
-            <th><label for="tl-end">End Date</label></th>
+            <th><label for="tl-end">{{ $t('sharinghistory.timeline.endDate') }}</label></th>
             <td>
               <select id="tl-end" v-model="selectedEnd" style="width:160px">
-                <option value="">— none —</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} AD</option>
+                <option value="">{{ $t('sharinghistory.filter.none') }}</option>
+                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('sharinghistory.timeline.yearSuffix') }}</option>
               </select>
             </td>
           </tr>
           <tr>
             <th></th>
             <td style="padding-top:12px">
-              <button class="btn" @click="search">Go</button>
+              <button class="btn" @click="search">{{ $t('sharinghistory.action.go') }}</button>
               <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>
             </td>
           </tr>
