@@ -23,7 +23,7 @@ function profileTitle(record) {
 
 <template>
   <div class="content-box">
-    <h1 class="section-heading">Historical Profiles</h1>
+    <h1 class="section-heading">{{ $t('sharinghistory.nav.historicalProfiles') }}</h1>
     <p class="hb-intro-note">
       Each profile presents the period 1815 – 1918 from the perspective of the
       country concerned, illustrated with items from the database.

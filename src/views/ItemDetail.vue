@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route  = useRoute()
@@ -33,7 +33,7 @@ const itemLangs = computed(() => {
 // translation for it; otherwise fall back to the default pick (defaultLang if
 // available, else the item's first language). Recomputes on navigation, so no
 // per-item reset watcher is needed.
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const activeLang = computed(() =>
   itemLangs.value.includes(locale.value)
     ? locale.value
@@ -46,7 +46,11 @@ watch(activeLang, lang => {
 
 // ── Translation helpers ───────────────────────────────────────────────
 
-function t(it) {
+// The curatorial text of an item, in the active content language. Named apart
+// from `t` on purpose: `t` is this website's interface texts, and passing an
+// item to it would also read to `viewer-i18n-check` as an entry asked for by
+// something other than a written-out name.
+function itemText(it) {
   if (!it) return {}
   return translationsCache.value[activeLang.value]?.[it.id] ?? {}
 }
@@ -58,7 +62,7 @@ function labelText(it) {
 
 function labelHtml(it) {
   if (!it) return ''
-  return mdInlineGloss(t(it).name ?? it.internal_name ?? it.id)
+  return mdInlineGloss(itemText(it).name ?? it.internal_name ?? it.id)
 }
 
 // Item content (not the app's own English interface) follows the active
@@ -213,34 +217,34 @@ function partnerLink(it) {
 const keyFacts = computed(() => {
   if (!item.value) return []
   const it = item.value
-  const tr = t(it)
+  const tr = itemText(it)
   const facts = []
   const location = locationWithCountry(it, tr)
 
   if (isMonument.value) {
-    if (tr.alternate_name)  facts.push({ label: 'Also known as',    value: tr.alternate_name })
-    if (location)           facts.push({ label: 'Location',         value: location })
-    if (tr.dates)           facts.push({ label: 'Date of Monument', value: tr.dates })
-    if (tr.architects)      facts.push({ label: 'Architects',       value: tr.architects })
+    if (tr.alternate_name)  facts.push({ label: t('sharinghistory.sheet.alsoKnownAs'),    value: tr.alternate_name })
+    if (location)           facts.push({ label: t('sharinghistory.sheet.location'),       value: location })
+    if (tr.dates)           facts.push({ label: t('sharinghistory.sheet.dateOfMonument'), value: tr.dates })
+    if (tr.architects)      facts.push({ label: t('sharinghistory.sheet.architects'),     value: tr.architects })
     const patronValue = tr.patrons ?? tr.initial_owner
-    if (patronValue)        facts.push({ label: 'Patron(s)',        value: patronValue })
+    if (patronValue)        facts.push({ label: t('sharinghistory.sheet.patrons'),        value: patronValue })
   } else {
     const author = authorWithDates(it, tr)
-    if (tr.alternate_name)      facts.push({ label: 'Also known as',              value: tr.alternate_name })
-    if (location)               facts.push({ label: 'Location',                   value: location })
-    if (tr.holder)              facts.push({ label: 'Holding Institution',        value: tr.holder, link: partnerLink(it) })
-    if (tr.dates)               facts.push({ label: 'Date of Object',             value: tr.dates })
-    if (author)                 facts.push({ label: 'Author',                     value: author })
-    if (tr.scriber)             facts.push({ label: 'Scribe',                     value: tr.scriber })
-    if (it.owner_reference)     facts.push({ label: 'Inventory Number',           value: it.owner_reference })
-    if (tr.materials)           facts.push({ label: 'Material(s) / Technique(s)', value: tr.materials })
-    if (tr.dimensions)          facts.push({ label: 'Dimensions',                 value: tr.dimensions })
-    if (tr.provenance)          facts.push({ label: 'Provenance',                 value: tr.provenance })
-    if (tr.workshop)            facts.push({ label: 'Workshop',                   value: tr.workshop })
-    if (tr.binding_desc)        facts.push({ label: 'Binding',                    value: tr.binding_desc })
-    if (tr.owner)               facts.push({ label: 'Owner',                      value: tr.owner })
-    if (tr.initial_owner)       facts.push({ label: 'Initial Owner',              value: tr.initial_owner })
-    if (tr.place_of_production) facts.push({ label: 'Place of Production',        value: tr.place_of_production })
+    if (tr.alternate_name)      facts.push({ label: t('sharinghistory.sheet.alsoKnownAs'),        value: tr.alternate_name })
+    if (location)               facts.push({ label: t('sharinghistory.sheet.location'),           value: location })
+    if (tr.holder)              facts.push({ label: t('sharinghistory.sheet.holdingInstitution'), value: tr.holder, link: partnerLink(it) })
+    if (tr.dates)               facts.push({ label: t('sharinghistory.sheet.dateOfObject'),       value: tr.dates })
+    if (author)                 facts.push({ label: t('sharinghistory.sheet.author'),             value: author })
+    if (tr.scriber)             facts.push({ label: t('sharinghistory.sheet.scribe'),             value: tr.scriber })
+    if (it.owner_reference)     facts.push({ label: t('sharinghistory.sheet.inventoryNumber'),    value: it.owner_reference })
+    if (tr.materials)           facts.push({ label: t('sharinghistory.sheet.materialsTechniques'), value: tr.materials })
+    if (tr.dimensions)          facts.push({ label: t('sharinghistory.sheet.dimensions'),         value: tr.dimensions })
+    if (tr.provenance)          facts.push({ label: t('sharinghistory.sheet.provenance'),         value: tr.provenance })
+    if (tr.workshop)            facts.push({ label: t('sharinghistory.sheet.workshop'),           value: tr.workshop })
+    if (tr.binding_desc)        facts.push({ label: t('sharinghistory.sheet.binding'),            value: tr.binding_desc })
+    if (tr.owner)               facts.push({ label: t('sharinghistory.sheet.owner'),              value: tr.owner })
+    if (tr.initial_owner)       facts.push({ label: t('sharinghistory.sheet.initialOwner'),       value: tr.initial_owner })
+    if (tr.place_of_production) facts.push({ label: t('sharinghistory.sheet.placeOfProduction'),  value: tr.place_of_production })
   }
 
   return facts
@@ -250,28 +254,30 @@ const keyFacts = computed(() => {
 
 const contentSections = computed(() => {
   if (!item.value) return []
-  const tr = t(item.value)
+  const tr = itemText(item.value)
   const monument = isMonument.value
   const sections = []
 
+  // `id` is what the view keys and compares on; `heading` is a text and will
+  // read differently in every language, so nothing may branch on it.
   if (monument) {
-    if (tr.history)               sections.push({ heading: 'History',                        value: tr.history })
-    if (tr.description)           sections.push({ heading: 'Description',                    value: tr.description })
-    if (tr.method_for_datation)   sections.push({ heading: 'How Monument was dated',         value: tr.method_for_datation })
-    if (tr.method_for_provenance) sections.push({ heading: 'How provenance was established', value: tr.method_for_provenance })
-    if (tr.archival)              sections.push({ heading: 'Archival or Bibliographical Reference', value: tr.archival })
-    if (tr.bibliography)          sections.push({ heading: 'Selected bibliography',          value: tr.bibliography })
+    if (tr.history)               sections.push({ id: 'history',      heading: t('sharinghistory.sheet.history'),                        value: tr.history })
+    if (tr.description)           sections.push({ id: 'description',  heading: t('sharinghistory.sheet.description'),                    value: tr.description })
+    if (tr.method_for_datation)   sections.push({ id: 'datation',     heading: t('sharinghistory.sheet.howMonumentWasDated'),            value: tr.method_for_datation })
+    if (tr.method_for_provenance) sections.push({ id: 'provenance',   heading: t('sharinghistory.sheet.howProvenanceWasEstablished'),    value: tr.method_for_provenance })
+    if (tr.archival)              sections.push({ id: 'archival',     heading: t('sharinghistory.sheet.archivalReference'),              value: tr.archival })
+    if (tr.bibliography)          sections.push({ id: 'bibliography', heading: t('sharinghistory.sheet.selectedBibliography'),           value: tr.bibliography })
   } else {
-    if (tr.description)           sections.push({ heading: 'Description',                          value: tr.description })
-    if (tr.method_for_datation)   sections.push({ heading: 'How date and origin were established', value: tr.method_for_datation })
-    if (tr.obtention)             sections.push({ heading: 'How Object was obtained',              value: tr.obtention })
-    if (tr.method_for_provenance) sections.push({ heading: 'How provenance was established',       value: tr.method_for_provenance })
+    if (tr.description)           sections.push({ id: 'description',  heading: t('sharinghistory.sheet.description'),                     value: tr.description })
+    if (tr.method_for_datation)   sections.push({ id: 'datation',     heading: t('sharinghistory.sheet.howDateAndOriginWereEstablished'), value: tr.method_for_datation })
+    if (tr.obtention)             sections.push({ id: 'obtention',    heading: t('sharinghistory.sheet.howObjectWasObtained'),            value: tr.obtention })
+    if (tr.method_for_provenance) sections.push({ id: 'provenance',   heading: t('sharinghistory.sheet.howProvenanceWasEstablished'),     value: tr.method_for_provenance })
     // Legacy order after Description: "Type of Object", then "Archival or
     // Bibliographical Reference" (see database_item.php, e.g. it;63).
-    if (tr.type)                  sections.push({ heading: 'Type of Object',                       value: tr.type })
-    if (tr.archival)              sections.push({ heading: 'Archival or Bibliographical Reference', value: tr.archival })
-    if (tr.bibliography)          sections.push({ heading: 'Selected bibliography',                value: tr.bibliography })
-    if (tr.catalogue_holding_link) sections.push({ heading: 'Catalogue', value: `[${tr.catalogue_holding_link}](${tr.catalogue_holding_link})` })
+    if (tr.type)                  sections.push({ id: 'type',         heading: t('sharinghistory.sheet.typeOfObject'),                    value: tr.type })
+    if (tr.archival)              sections.push({ id: 'archival',     heading: t('sharinghistory.sheet.archivalReference'),               value: tr.archival })
+    if (tr.bibliography)          sections.push({ id: 'bibliography', heading: t('sharinghistory.sheet.selectedBibliography'),            value: tr.bibliography })
+    if (tr.catalogue_holding_link) sections.push({ id: 'catalogue',   heading: t('sharinghistory.sheet.catalogue'), value: `[${tr.catalogue_holding_link}](${tr.catalogue_holding_link})` })
   }
 
   return sections
@@ -286,7 +292,7 @@ const showShortDescription = ref(false)
 
 const shortDescription = computed(() => {
   if (!item.value) return null
-  return t(item.value).short_description ?? null
+  return itemText(item.value).short_description ?? null
 })
 
 watch(() => item.value?.id, () => { showShortDescription.value = false })
@@ -305,12 +311,12 @@ const monumentDetails = computed(() => {
 
 const credits = computed(() => {
   if (!item.value) return []
-  const tr = t(item.value)
+  const tr = itemText(item.value)
   const c = []
-  if (tr.author)                   c.push({ label: 'Prepared by',                value: tr.author })
-  if (tr.copy_editor)              c.push({ label: 'Copyedited by',              value: tr.copy_editor })
-  if (tr.translator)               c.push({ label: 'Translation by',             value: tr.translator })
-  if (tr.translation_copy_editor)  c.push({ label: 'Translation copyedited by',  value: tr.translation_copy_editor })
+  if (tr.author)                   c.push({ label: t('sharinghistory.sheet.preparedBy'),               value: tr.author })
+  if (tr.copy_editor)              c.push({ label: t('sharinghistory.sheet.copyeditedBy'),             value: tr.copy_editor })
+  if (tr.translator)               c.push({ label: t('sharinghistory.sheet.translationBy'),            value: tr.translator })
+  if (tr.translation_copy_editor)  c.push({ label: t('sharinghistory.sheet.translationCopyeditedBy'),  value: tr.translation_copy_editor })
   return c
 })
 
@@ -318,13 +324,13 @@ const credits = computed(() => {
 
 const citation = computed(() => {
   if (!item.value) return ''
-  const tr = t(item.value)
+  const tr = itemText(item.value)
   const name = labelText(item.value)
   if (!name) return ''
   const year = new Date().getFullYear()
   const permalink = `${window.location.origin}${window.location.pathname}#/item/${encodeURIComponent(item.value.id)}`
   const author = tr.author ? `${tr.author} ` : ''
-  return `${author}"${name}" in Sharing History, ${year}. ${permalink}`
+  return `${author}"${name}" ${t('sharinghistory.sheet.citationIn')} ${t('sharinghistory.identity.title')}, ${year}. ${permalink}`
 })
 
 // ── "View on Timeline" — country + date-range proximity link. Legacy never
@@ -390,14 +396,14 @@ function back() {
 
 <template>
   <div v-if="!item" class="content-box not-found">
-    <p>Item not found.</p>
-    <router-link to="/">← Return home</router-link>
+    <p>{{ $t('sharinghistory.notFound.item') }}</p>
+    <router-link to="/">← {{ $t('sharinghistory.action.returnHome') }}</router-link>
   </div>
 
   <div v-else class="detail-wrap">
     <!-- Breadcrumb / back -->
-    <a class="back-link" href="#" @click.prevent="back">← Back to results</a>
-    <router-link v-if="timelineLink" :to="timelineLink" class="timeline-link">View on Timeline →</router-link>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.action.backToResults') }}</a>
+    <router-link v-if="timelineLink" :to="timelineLink" class="timeline-link">{{ $t('sharinghistory.action.viewOnTimeline') }} →</router-link>
 
     <!-- Language selector for item content — only languages this item actually has -->
     <div class="detail content-box" @click="onDetailClick">
@@ -434,7 +440,7 @@ function back() {
       </table>
 
       <!-- Content sections (markdown) -->
-      <template v-for="section in contentSections" :key="section.heading">
+      <template v-for="section in contentSections" :key="section.id">
         <section class="content-section">
           <h2 class="content-section-heading">{{ section.heading }}</h2>
           <div v-html="mdGloss(section.value)" class="prose" :dir="contentDir" />
@@ -442,7 +448,7 @@ function back() {
 
         <!-- Short description toggle (legacy: pc_view_sdesc), directly below Description -->
         <section
-          v-if="section.heading === 'Description' && shortDescription"
+          v-if="section.id === 'description' && shortDescription"
           class="content-section short-description"
         >
           <button
@@ -450,7 +456,7 @@ function back() {
             class="short-description-toggle"
             @click="showShortDescription = !showShortDescription"
           >
-            {{ showShortDescription ? 'Hide short description' : 'View short description' }}
+            {{ showShortDescription ? $t('sharinghistory.action.hideShortDescription') : $t('sharinghistory.action.viewShortDescription') }}
           </button>
           <div v-if="showShortDescription" v-html="mdGloss(shortDescription)" class="prose" :dir="contentDir" />
         </section>
@@ -458,13 +464,13 @@ function back() {
 
       <!-- Special Features (monument sub-details) -->
       <div v-if="monumentDetails.length" class="special-features">
-        <h2 class="sub-section-title">Special Features</h2>
+        <h2 class="sub-section-title">{{ $t('sharinghistory.sheet.specialFeatures') }}</h2>
         <div v-for="d in monumentDetails" :key="d.id" class="special-feature" :dir="contentDir">
-          <h3 class="special-feature-name" v-html="mdInline(t(d).name ?? d.internal_name ?? d.id)" />
-          <p v-if="t(d).location" class="special-feature-meta">{{ t(d).location }}</p>
-          <p v-if="t(d).dates" class="special-feature-meta">{{ t(d).dates }}</p>
+          <h3 class="special-feature-name" v-html="mdInline(itemText(d).name ?? d.internal_name ?? d.id)" />
+          <p v-if="itemText(d).location" class="special-feature-meta">{{ itemText(d).location }}</p>
+          <p v-if="itemText(d).dates" class="special-feature-meta">{{ itemText(d).dates }}</p>
           <p v-if="d.artist_names?.length" class="special-feature-meta">{{ d.artist_names.join(', ') }}</p>
-          <div v-if="t(d).description" v-html="mdGloss(t(d).description)" class="prose" />
+          <div v-if="itemText(d).description" v-html="mdGloss(itemText(d).description)" class="prose" />
           <div v-if="d.images?.length" class="images">
             <figure v-for="(img, i) in d.images" :key="i">
               <img :src="img.url" :alt="img.captions?.[activeLang] ?? ''" loading="lazy" class="detail-img" />
@@ -475,7 +481,7 @@ function back() {
 
       <!-- Related Video -->
       <div v-if="relatedMedia.length" class="related-media">
-        <h2 class="sub-section-title">Related Video</h2>
+        <h2 class="sub-section-title">{{ $t('sharinghistory.sheet.relatedVideo') }}</h2>
         <div v-for="(m, i) in relatedMedia" :key="i" class="media-entry">
           <a :href="m.url" target="_blank" rel="noopener" class="media-title">{{ m.title }}</a>
           <p v-if="m.description" class="media-description">{{ m.description }}</p>
@@ -485,7 +491,7 @@ function back() {
       <!-- Credits (MWNF Working Number shows even when no credit names exist,
            like legacy) -->
       <div v-if="credits.length || item.mwnf_reference" class="credits">
-        <h2 class="credits-heading">Credits</h2>
+        <h2 class="credits-heading">{{ $t('sharinghistory.sheet.credits') }}</h2>
         <dl v-if="credits.length" class="credits-list">
           <template v-for="c in credits" :key="c.label">
             <dt>{{ c.label }}</dt>
@@ -493,19 +499,19 @@ function back() {
           </template>
         </dl>
         <p v-if="item.mwnf_reference" class="mwnf-ref">
-          MWNF Working Number: <strong>{{ item.mwnf_reference }}</strong>
+          {{ $t('sharinghistory.sheet.mwnfWorkingNumber') }}: <strong>{{ item.mwnf_reference }}</strong>
         </p>
       </div>
 
       <!-- Citation -->
       <div v-if="citation" class="citation">
-        <h2 class="credits-heading">Citation</h2>
+        <h2 class="credits-heading">{{ $t('sharinghistory.sheet.citation') }}</h2>
         <p class="citation-text">{{ citation }}</p>
       </div>
 
       <!-- On display in (Virtual Exhibitions) -->
       <div v-if="onDisplayInLinks.length" class="on-display-in">
-        <h2 class="sub-section-title">On display in</h2>
+        <h2 class="sub-section-title">{{ $t('sharinghistory.sheet.onDisplayIn') }}</h2>
         <ul class="gallery-list">
           <li v-for="l in onDisplayInLinks" :key="l.to.path">
             <router-link :to="l.to">
@@ -517,7 +523,7 @@ function back() {
 
       <!-- Galleries (THG cross-links) -->
       <div v-if="thgGalleryLinks.length" class="galleries">
-        <h2 class="sub-section-title">Galleries</h2>
+        <h2 class="sub-section-title">{{ $t('sharinghistory.sheet.galleries') }}</h2>
         <ul class="gallery-list">
           <li v-for="g in thgGalleryLinks" :key="g.name">
             <a :href="g.href">{{ g.name }}</a>
@@ -527,7 +533,7 @@ function back() {
 
       <!-- Related items -->
       <div v-if="relatedItems.length" class="related">
-        <h2 class="sub-section-title">Related Items</h2>
+        <h2 class="sub-section-title">{{ $t('sharinghistory.sheet.relatedItems') }}</h2>
         <ul class="related-list item-list">
           <li
             v-for="{ item: rel, justifications } in relatedItems"
@@ -540,7 +546,7 @@ function back() {
               <div v-else class="item-thumb-placeholder" />
             </div>
             <div class="item-list-info" :dir="contentDir">
-              <div class="item-list-name" v-html="mdInline(t(rel).name ?? rel.internal_name ?? rel.id)" />
+              <div class="item-list-name" v-html="mdInline(itemText(rel).name ?? rel.internal_name ?? rel.id)" />
               <div
                 v-if="justifications[activeLang]"
                 class="item-list-justification"
@@ -557,8 +563,8 @@ function back() {
     <!-- Glossary term modal, mirrors legacy's glossary1.php popup -->
     <div v-if="activeGlossaryTerm" class="gloss-modal-overlay" @click.self="closeGlossaryModal">
       <div class="gloss-modal" :dir="contentDir">
-        <button class="gloss-modal-close" @click="closeGlossaryModal" aria-label="Close">✕</button>
-        <h2 class="gloss-modal-heading">Glossary &amp; Spelling</h2>
+        <button class="gloss-modal-close" @click="closeGlossaryModal" :aria-label="$t('sharinghistory.glossary.close')">✕</button>
+        <h2 class="gloss-modal-heading">{{ $t('sharinghistory.glossary.heading') }}</h2>
         <h3 class="gloss-modal-term">{{ activeGlossaryTerm.spelling }}</h3>
         <p class="gloss-modal-definition">{{ activeGlossaryTerm.definition }}</p>
       </div>

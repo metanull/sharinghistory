@@ -167,7 +167,7 @@ function back() {
 
 <template>
   <div v-if="!chapter" class="content-box not-found">
-    <p>Chapter not found.</p>
+    <p>{{ $t('sharinghistory.notFound.chapter') }}</p>
     <router-link to="/exhibitions">← Return to Exhibitions</router-link>
   </div>
 
@@ -185,7 +185,7 @@ function back() {
         <button class="page-nav-btn" :disabled="chapterIndex <= 0" @click="goToChapter(chapterIndex - 1)">
           ← Previous chapter
         </button>
-        <span class="page-nav-count">Chapter {{ chapterIndex + 1 }} of {{ theme.chapters.length }}</span>
+        <span class="page-nav-count">{{ $t('sharinghistory.exhibition.chapter') }} {{ chapterIndex + 1 }} / {{ theme.chapters.length }}</span>
         <button class="page-nav-btn" :disabled="chapterIndex >= theme.chapters.length - 1" @click="goToChapter(chapterIndex + 1)">
           Next chapter →
         </button>
@@ -198,11 +198,11 @@ function back() {
           <div v-if="collectionText(chapter.id).description" class="prose" v-html="md(collectionText(chapter.id).description)" />
 
           <div v-if="chapterExtra.see_also_links" class="chapter-extra">
-            <h3 class="chapter-extra-heading">See also</h3>
+            <h3 class="chapter-extra-heading">{{ $t('sharinghistory.exhibition.seeAlso') }}</h3>
             <div class="prose" v-html="md(chapterExtra.see_also_links)" />
           </div>
           <div v-if="chapterExtra.further_reading" class="chapter-extra">
-            <h3 class="chapter-extra-heading">Further reading</h3>
+            <h3 class="chapter-extra-heading">{{ $t('sharinghistory.exhibition.furtherReading') }}</h3>
             <div class="prose" v-html="md(chapterExtra.further_reading)" />
           </div>
         </div>
@@ -219,20 +219,20 @@ function back() {
               <button
                 class="variant-btn"
                 :class="{ active: selectedVariantIndex === 0 }"
-                title="Main view"
+                :title="$t('sharinghistory.exhibition.mainView')"
                 @click="selectVariant(0)"
               >
-                <img v-if="selected.item.images?.[0]?.url" :src="selected.item.images[0].url" alt="Main view" />
+                <img v-if="selected.item.images?.[0]?.url" :src="selected.item.images[0].url" :alt="$t('sharinghistory.exhibition.mainView')" />
               </button>
               <button
                 v-for="(variant, idx) in selectedVariants"
                 :key="idx"
                 class="variant-btn"
                 :class="{ active: selectedVariantIndex === idx + 1 }"
-                title="Detail view"
+                :title="$t('sharinghistory.exhibition.detailView')"
                 @click="selectVariant(idx + 1)"
               >
-                <img v-if="variant.image_url" :src="variant.image_url" alt="Detail view" />
+                <img v-if="variant.image_url" :src="variant.image_url" :alt="$t('sharinghistory.exhibition.detailView')" />
               </button>
             </div>
 
@@ -241,11 +241,11 @@ function back() {
             <p v-if="selectedDisplay.location" class="item-detail-meta">{{ selectedDisplay.location }}</p>
             <p v-if="selectedDisplay.museum" class="item-detail-meta">{{ selectedDisplay.museum }}</p>
             <p v-if="selectedDisplay.justificationCurator" class="item-detail-justification">
-              <span class="just-label">Curator's justification</span>
+              <span class="just-label">{{ $t('sharinghistory.exhibition.curatorJustification') }}</span>
               <span v-html="mdInline(selectedDisplay.justificationCurator)" />
             </p>
             <p v-if="selectedDisplay.justificationPartner" class="item-detail-justification">
-              <span class="just-label">Partner's justification</span>
+              <span class="just-label">{{ $t('sharinghistory.exhibition.partnerJustification') }}</span>
               <span v-html="mdInline(selectedDisplay.justificationPartner)" />
             </p>
             <RouterLink :to="`/item/${encodeURIComponent(selected.item.id)}`" class="more-info-link">

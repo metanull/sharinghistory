@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { I18nText } from '@metanull/viewer-core'
 
 const router = useRouter()
 
@@ -10,22 +11,17 @@ function browse() {
 
 <template>
   <div>
-    <h1 class="section-heading">Partners</h1>
+    <h1 class="section-heading">{{ $t('sharinghistory.nav.partners') }}</h1>
 
     <div class="content-box">
-      <p class="intro-text">
-        Sharing History — Arab World – Europe is a collaborative project
-        bringing together museums, archives, universities, libraries and
-        cultural heritage authorities from the Arab world and Europe. Browse
-        the partners — and their associated partners — grouped by country.
-      </p>
+      <I18nText tag="p" class="intro-text" keypath="sharinghistory.partner.introDiscover" />
 
       <table class="form-table filter-table">
         <tbody>
           <tr>
-            <th><label>Partners</label></th>
+            <th><label>{{ $t('sharinghistory.nav.partners') }}</label></th>
             <td>
-              <button class="btn" @click="browse()">Browse Partners →</button>
+              <button class="btn" @click="browse()">{{ $t('sharinghistory.action.browsePartners') }} →</button>
             </td>
           </tr>
         </tbody>

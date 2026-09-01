@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { I18nText } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const router = useRouter()
@@ -23,85 +24,59 @@ function goToItem(item) {
   <div class="home">
     <!-- Welcome banner -->
     <div class="home-banner content-box">
-      <h1 class="home-title">Welcome to Sharing History</h1>
-      <p class="home-intro">
-        Sharing History — Arab World – Europe presents objects, monuments and archival documents
-        from the period 1815 – 1918, held by partner museums, archives and institutions across the Arab world and Europe.
-        Explore the collection through the Permanent Collection browser or the full-text
-        Database search.
-      </p>
+      <h1 class="home-title">{{ $t('sharinghistory.home.title') }}</h1>
+      <I18nText tag="p" class="home-intro" keypath="sharinghistory.home.intro" />
     </div>
 
     <!-- Navigation cards -->
     <div class="home-cards">
       <div class="home-card content-box" @click="$router.push('/permanent-collection')">
-        <h2 class="home-card-title">Permanent Collection</h2>
-        <p class="home-card-desc">
-          Browse the collection by country, holding institution,
-          or date range.
-        </p>
-        <span class="home-card-link">Browse →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.permanentCollection') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.permanentCollectionText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.browse') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/database')">
-        <h2 class="home-card-title">Database</h2>
-        <p class="home-card-desc">
-          Search the full inventory by name, location, provenance, material, patron
-          and more. Combine up to three keyword fields.
-        </p>
-        <span class="home-card-link">Search →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.database') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.databaseText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.search') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/timeline')">
-        <h2 class="home-card-title">Timeline</h2>
-        <p class="home-card-desc">
-          Explore historical events by country and time period, and see the
-          collection items linked to each period.
-        </p>
-        <span class="home-card-link">Explore →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.timeline') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.timelineText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.explore') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/partners')">
-        <h2 class="home-card-title">Partners</h2>
-        <p class="home-card-desc">
-          Meet the partner museums and institutions across Europe and beyond
-          that hold and share the objects and monuments in the collection.
-        </p>
-        <span class="home-card-link">Browse →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.partners') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.partnersText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.browse') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/exhibitions')">
-        <h2 class="home-card-title">Exhibitions</h2>
-        <p class="home-card-desc">
-          Discover curated virtual exhibitions exploring specific themes,
-          monuments, and objects from the Sharing History collection.
-        </p>
-        <span class="home-card-link">Explore →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.exhibitions') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.exhibitionsText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.explore') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/historical-background')">
-        <h2 class="home-card-title">Historical Background</h2>
-        <p class="home-card-desc">
-          The Arab, Ottoman and European perspectives on the shared history
-          of the period 1815 – 1918.
-        </p>
-        <span class="home-card-link">Read →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.historicalBackground') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.historicalBackgroundText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.read') }} →</span>
       </div>
 
       <div class="home-card content-box" @click="$router.push('/historical-profiles')">
-        <h2 class="home-card-title">Historical Profiles</h2>
-        <p class="home-card-desc">
-          Illustrated country-by-country profiles of the period, each written
-          from the perspective of the partner concerned.
-        </p>
-        <span class="home-card-link">Browse →</span>
+        <h2 class="home-card-title">{{ $t('sharinghistory.nav.historicalProfiles') }}</h2>
+        <I18nText tag="p" class="home-card-desc" keypath="sharinghistory.home.historicalProfilesText" />
+        <span class="home-card-link">{{ $t('sharinghistory.action.browse') }} →</span>
       </div>
     </div>
 
     <!-- Featured item spotlight -->
     <div v-if="featured" class="home-featured content-box">
-      <h2 class="section-heading">Item on Display</h2>
-      <div class="featured-inner" @click="goToItem(featured)" title="Click to view details">
+      <h2 class="section-heading">{{ $t('sharinghistory.home.itemOnDisplay') }}</h2>
+      <div class="featured-inner" @click="goToItem(featured)" :title="$t('sharinghistory.home.clickForDetails')">
         <div v-if="featured.images?.length" class="featured-img-wrap">
           <img
             :src="featured.images[0].url"
@@ -119,7 +94,7 @@ function goToItem(item) {
           <p v-if="enItemTranslations[featured.id]?.dates" class="featured-meta">
             {{ enItemTranslations[featured.id].dates }}
           </p>
-          <span class="featured-link">View details →</span>
+          <span class="featured-link">{{ $t('sharinghistory.action.viewDetails') }} →</span>
         </div>
       </div>
     </div>

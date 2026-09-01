@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
@@ -105,15 +105,15 @@ function back() {
 
 <template>
   <div v-if="!exhibition" class="content-box not-found">
-    <p>Exhibition not found.</p>
-    <router-link to="/exhibitions">← Return to Exhibitions</router-link>
+    <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
+    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
   </div>
 
   <div v-else class="intro-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← Back to {{ text.title ?? exhibition.internal_name }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ text.title ?? exhibition.internal_name }}</a>
 
     <div class="content-box">
-      <h1 class="intro-title" v-html="mdInline(text.extra?.intro_header ?? 'About the Exhibition')" />
+      <h1 class="intro-title" v-html="mdInline(text.extra?.intro_header ?? $t('sharinghistory.exhibition.introduction'))" />
 
       <div class="intro-grid">
         <div class="intro-text-col">
@@ -137,26 +137,26 @@ function back() {
 
       <!-- Legacy exh_introduction.php "Related Content" box -->
       <div class="intro-related">
-        <h3 class="intro-related-heading">Related Content</h3>
+        <h3 class="intro-related-heading">{{ $t('sharinghistory.related.title') }}</h3>
         <ul class="intro-related-list">
           <li>
             <RouterLink :to="{ path: '/timeline/results', query: { exhibition: 'pc' } }">
-              Political Context Timeline
+              {{ $t('sharinghistory.related.politicalContextTimeline') }}
             </RouterLink>
           </li>
           <li v-if="hasThematicTimeline">
             <RouterLink :to="{ path: '/timeline/results', query: { exhibition: exhibition.id } }">
-              Thematic Timeline
+              {{ $t('sharinghistory.related.thematicTimeline') }}
             </RouterLink>
           </li>
           <li>
             <RouterLink :to="{ path: '/permanent-collection/results', query: { exhibition: exhibition.id } }">
-              See Gallery for this Theme
+              {{ $t('sharinghistory.related.seeGalleryForTheme') }}
             </RouterLink>
           </li>
           <li v-if="hasFurtherReading">
             <RouterLink :to="`/exhibitions/${exhibition.id}/further-reading`">
-              Further Reading
+              {{ $t('sharinghistory.exhibition.furtherReadingHeading') }}
             </RouterLink>
           </li>
         </ul>

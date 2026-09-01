@@ -49,12 +49,8 @@ const insightCountries = computed(() =>
 <template>
   <div class="hb-wrap">
     <div class="content-box">
-      <h1 class="section-heading">Historical Background</h1>
-      <p class="hb-intro-note">
-        The <em>Sharing History</em> Virtual Museum and Virtual Exhibitions
-        address Arab–Ottoman–European relations in the 19th century from the
-        specific perspectives of all parties.
-      </p>
+      <h1 class="section-heading">{{ $t('sharinghistory.nav.historicalBackground') }}</h1>
+      <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.intro" />
 
       <div v-if="perspectives.length" class="perspective-tabs">
         <button
@@ -73,7 +69,7 @@ const insightCountries = computed(() =>
     </div>
 
     <div v-if="topics.length" class="content-box">
-      <h2 class="section-heading">Read more</h2>
+      <h2 class="section-heading">{{ $t('sharinghistory.action.readMore') }}</h2>
       <ul class="topic-list">
         <li v-for="t in topics" :key="t.id" class="topic-row">
           <span class="topic-name" v-html="mdInline(t.title)" />
@@ -82,7 +78,7 @@ const insightCountries = computed(() =>
     </div>
 
     <div class="content-box">
-      <h2 class="section-heading">Country Insight</h2>
+      <h2 class="section-heading">{{ $t('sharinghistory.history.countryInsight') }}</h2>
       <p class="hb-intro-note">
         This page provides direct access to information on the historical
         background for each country. The Historical Profiles and Timeline
@@ -101,7 +97,7 @@ const insightCountries = computed(() =>
               <RouterLink
                 :to="{ path: '/timeline/results', query: { country: c.record.country_id, exhibition: 'pc' } }"
               >
-                Political Context Timeline
+                {{ $t('sharinghistory.related.politicalContextTimeline') }}
               </RouterLink>
             </td>
           </tr>
