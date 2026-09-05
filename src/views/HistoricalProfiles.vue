@@ -4,9 +4,9 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 
 const {
   historicalBackgroundProfiles,
-  enCollectionTranslations,
   countryLabel,
   mdInline,
+  tr,
 } = useInventoryData()
 
 // Country profiles, alphabetical by English country name (legacy nav order).
@@ -17,7 +17,7 @@ const profiles = computed(() =>
 )
 
 function profileTitle(record) {
-  return enCollectionTranslations.value[record.id]?.title ?? record.internal_name
+  return tr('collections', record.id)?.title ?? record.internal_name
 }
 </script>
 

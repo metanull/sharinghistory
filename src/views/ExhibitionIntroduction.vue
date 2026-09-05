@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
@@ -7,13 +7,16 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 const route = useRoute()
 const router = useRouter()
 const {
-  itemById, partnerLabel,
-  availableLangs, defaultLang,
-  translationsCache, loadLangTranslations,
+  itemById,
+  partnerLabel,
+  availableLanguages,
+  defaultLang,
   exhibitionById,
-  enCollectionTranslations,
   timelines,
-  md, mdInline,
+  md,
+  mdInline,
+  tr,
+  loadTranslations,
 } = useInventoryData()
 
 const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params.exhibitionId)) ?? null)
@@ -21,32 +24,25 @@ const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params
 // ── Language selector (exhibition text + item captions loaded on demand) ──
 
 const { locale } = useI18n()
-const activeLang = computed(() => availableLangs.value.includes(locale.value) ? locale.value : defaultLang)
-const collectionLangCache = ref({})
-
-async function loadCollectionLangTranslations(lang) {
-  if (collectionLangCache.value[lang]) return
-  try {
-    const m = await import(`@inventory-data/translations/collections.${lang}.json`)
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: m.default }
-  } catch {
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: {} }
-  }
-}
+const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
+// Collection texts in the record language. They come through viewer-core by
+// name, like every other translation file: an interpolated
+// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
+// in every language of the entity eagerly.
 
 watch(activeLang, lang => {
-  loadCollectionLangTranslations(lang)
-  loadLangTranslations(lang)
+  loadTranslations('collections', lang)
+  loadTranslations('items', lang)
 }, { immediate: true })
 
 const text = computed(() => {
   const e = exhibition.value
   if (!e) return {}
-  // Fall back to the English record when the active language has none — see
-  // the same fallback in HistoricalBackgroundCountry.vue.
-  return collectionLangCache.value[activeLang.value]?.[e.id]
-    ?? enCollectionTranslations.value[e.id]
-    ?? {}
+  // `tr` falls back to the English record when the active language has none,
+  // which this page needs: the site's language list is derived from the item
+  // translations, and the package's coverage per entity does not line up with
+  // it, so a language a visitor can pick may ship no collections file at all.
+  return tr('collections', e.id, activeLang.value)
 })
 
 // The SH importer merges the legacy sh_exhibitionnames fields (subtitle,
@@ -74,12 +70,12 @@ const introItems = computed(() => {
   const e = exhibition.value
   if (!e) return []
   return (e.items ?? [])
-    .map(entry => ({ entry, item: itemById.value[entry.id] }))
+    .map(entry => ({ entry, item: itemById.value.get(entry.id) }))
     .filter(({ item }) => item)
     .sort((a, b) => (a.entry.display_order ?? 9999) - (b.entry.display_order ?? 9999))
     .map(({ entry, item }) => {
       const caption = entry.caption?.[activeLang.value] ?? entry.caption?.en ?? {}
-      const t = translationsCache.value[activeLang.value]?.[item.id] ?? {}
+      const t = tr('items', item.id, activeLang.value) ?? {}
       return {
         item,
         image: item.images?.[0]?.url ?? null,

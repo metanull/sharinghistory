@@ -6,7 +6,13 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 
 const router = useRouter()
 const { t } = useI18n()
-const { timelines, timelineEvents, countryLabel, exhibitions, enCollectionTranslations } = useInventoryData()
+const {
+  timelines,
+  timelineEvents,
+  countryLabel,
+  exhibitions,
+  tr,
+} = useInventoryData()
 
 // Countries available in the timeline data (SH: one timeline per
 // country × exhibition — collapse to distinct countries here)
@@ -28,7 +34,7 @@ const availableExhibitions = computed(() => {
   const boundIds = new Set(timelines.value.map(t => t.collection_id).filter(Boolean))
   return exhibitions.value
     .filter(e => boundIds.has(e.id))
-    .map(e => ({ id: e.id, name: enCollectionTranslations.value[e.id]?.title ?? e.internal_name }))
+    .map(e => ({ id: e.id, name: tr('collections', e.id)?.title ?? e.internal_name }))
 })
 
 // Century marks spanning the actual event data, mirroring the legacy

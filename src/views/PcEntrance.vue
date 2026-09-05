@@ -6,9 +6,14 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 
 const router = useRouter()
 const {
-  publicItems: items, countries, partners,
-  countryLabel, partnerLabel,
-  exhibitions, enCollectionTranslations, mdStrip,
+  publicItems: items,
+  countries,
+  partners,
+  countryLabel,
+  partnerLabel,
+  exhibitions,
+  mdStrip,
+  tr,
 } = useInventoryData()
 
 const filterType = ref('country') // country | theme | partner | begin | end
@@ -35,7 +40,7 @@ const availablePartners = computed(() => {
 // browsable by exhibition membership, labelled "Theme" in the PC UI.
 const availableThemes = computed(() =>
   exhibitions.value
-    .map(e => ({ id: e.id, name: mdStrip(enCollectionTranslations.value[e.id]?.title ?? e.internal_name) }))
+    .map(e => ({ id: e.id, name: mdStrip(tr('collections', e.id)?.title ?? e.internal_name) }))
     .sort((a, b) => a.name.localeCompare(b.name))
 )
 

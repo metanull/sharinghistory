@@ -3,7 +3,12 @@ import { computed } from 'vue'
 import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
-const { partners, countryLabel, partnerLabel, enPartnerTranslations } = useInventoryData()
+const {
+  partners,
+  countryLabel,
+  partnerLabel,
+  tr,
+} = useInventoryData()
 const { t } = useI18n()
 
 // SH has a single Partners concept (no museum/institution split — the
@@ -16,7 +21,7 @@ const { t } = useI18n()
 // of the 120 in the package (the rest are placeholder rows: "Not know yet",
 // "Public Domain", or nameless).
 const groupedByCountry = computed(() => {
-  const named = partners.value.filter(p => enPartnerTranslations.value[p.id]?.name && p.country_id)
+  const named = partners.value.filter(p => tr('partners', p.id)?.name && p.country_id)
 
   const countries = new Map()
   for (const p of named) {

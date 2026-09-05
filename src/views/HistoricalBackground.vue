@@ -6,9 +6,10 @@ const {
   hbGeneralPerspectives,
   hbGeneralTopics,
   historicalBackgroundProfiles,
-  enCollectionTranslations,
   countryLabel,
-  md, mdInline,
+  md,
+  mdInline,
+  tr,
 } = useInventoryData()
 
 // Perspective pages (legacy historical_background_pages.php?page=N),
@@ -18,8 +19,8 @@ const activePerspectiveIndex = ref(0)
 const perspectives = computed(() =>
   hbGeneralPerspectives.value.map(p => ({
     ...p,
-    title: enCollectionTranslations.value[p.id]?.title ?? p.internal_name,
-    description: enCollectionTranslations.value[p.id]?.description ?? '',
+    title: tr('collections', p.id)?.title ?? p.internal_name,
+    description: tr('collections', p.id)?.description ?? '',
   }))
 )
 
@@ -33,7 +34,7 @@ const activePerspective = computed(
 const topics = computed(() =>
   hbGeneralTopics.value.map(t => ({
     ...t,
-    title: enCollectionTranslations.value[t.id]?.title ?? t.internal_name,
+    title: tr('collections', t.id)?.title ?? t.internal_name,
   }))
 )
 

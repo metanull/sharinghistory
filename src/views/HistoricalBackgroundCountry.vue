@@ -1,18 +1,23 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
 const router = useRouter()
 const {
-  historicalBackgroundRecords, historicalBackgroundPages,
-  itemById, itemLabel,
-  availableLangs, defaultLang,
-  enCollectionTranslations,
+  historicalBackgroundRecords,
+  historicalBackgroundPages,
+  itemById,
+  itemLabel,
+  availableLanguages,
+  defaultLang,
   countryLabel,
-  md, mdInline,
+  md,
+  mdInline,
+  tr,
+  loadTranslations,
 } = useInventoryData()
 
 const record = computed(() =>
@@ -40,25 +45,16 @@ const activePage = computed(() => pages.value[activePageIndex.value] ?? null)
 // ── Per-language text ───────────────────────────────────────────────────
 
 const { locale } = useI18n()
-const activeLang = computed(() => availableLangs.value.includes(locale.value) ? locale.value : defaultLang)
-const collectionLangCache = ref({})
+const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
+// Collection texts in the record language. They come through viewer-core by
+// name, like every other translation file: an interpolated
+// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
+// in every language of the entity eagerly.
 
-async function loadCollectionLangTranslations(lang) {
-  if (collectionLangCache.value[lang]) return
-  try {
-    const m = await import(`@inventory-data/translations/collections.${lang}.json`)
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: m.default }
-  } catch {
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: {} }
-  }
-}
-
-watch(activeLang, lang => loadCollectionLangTranslations(lang), { immediate: true })
+watch(activeLang, lang => loadTranslations('collections', lang), { immediate: true })
 
 function collectionText(collectionId) {
-  return collectionLangCache.value[activeLang.value]?.[collectionId]
-    ?? enCollectionTranslations.value[collectionId]
-    ?? {}
+  return tr('collections', collectionId, activeLang.value)
 }
 
 const recordText = computed(() => (record.value ? collectionText(record.value.id) : {}))
@@ -83,7 +79,7 @@ const bibliography = computed(() => {
 const pageItems = computed(() => {
   const p = activePage.value
   if (!p?.items?.length) return []
-  return p.items.map(e => itemById.value[e.id]).filter(Boolean)
+  return p.items.map(e => itemById.value.get(e.id)).filter(Boolean)
 })
 </script>
 

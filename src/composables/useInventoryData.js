@@ -1,35 +1,28 @@
-import { ref, computed } from 'vue'
-import { marked } from 'marked'
-import { renderBlock, renderInline, useDataPackage } from '@metanull/viewer-core'
-import manifestData from '@inventory-data/manifest.json'
-import itemsData from '@inventory-data/items.json'
-import countriesData from '@inventory-data/countries.json'
-import partnersData from '@inventory-data/partners.json'
-import timelinesData from '@inventory-data/timelines.json'
-import timelineEventsData from '@inventory-data/timeline_events.json'
-import collectionsData from '@inventory-data/collections.json'
-import { OFFERED_LANGUAGES } from '../languages.js'
+import { computed } from 'vue'
+import {
+  byId, entityRef, renderBlock, renderInline, renderPlain, useDataPackage,
+} from '@metanull/viewer-core'
 
-// Module-level singletons — loaded once, shared across all views
-const items = ref(itemsData)
-const countries = ref(countriesData)
-const partners = ref(partnersData)
-const timelines = ref(timelinesData)
-const timelineEvents = ref(timelineEventsData)
-const collections = ref(collectionsData)
-// Offered content languages: the site's own list (src/languages.js) narrowed
-// to the languages the installed package has item translations for. Never from
-// manifest.languages, which declares far more languages than have any item
-// content. dataset.config.js computes the same intersection for the switcher
-// with its own lazy glob, so the config module does not pull this file's eager
-// JSON into the entry chunk — the shared constant is what keeps the two in
-// step. Entities not covered in the active language fall back per entity to
-// English.
-const itemTranslationLoaders = import.meta.glob('@inventory-data/translations/items.*.json')
-const itemLangCodes = Object.keys(itemTranslationLoaders)
-  .map(path => path.match(/items\.([a-z]{2})\.json$/)?.[1])
-  .filter(Boolean)
-const availableLangs = ref(OFFERED_LANGUAGES.filter(code => itemLangCodes.includes(code)))
+// The website's records, read the one way every website reads them: through
+// viewer-core, lazily. Each entity is a shared ref that stays `null` until a
+// route declaring it in `meta.entities` brings its chunk in, so importing
+// this module loads nothing, and a page pays only for what it reads.
+// Translations are viewer-core's cache, not a second one kept here.
+
+const dataPackage = useDataPackage()
+const manifestData = dataPackage.manifest
+
+const items = entityRef('items')
+const countries = entityRef('countries')
+const partners = entityRef('partners')
+const timelines = entityRef('timelines')
+const timelineEvents = entityRef('timeline_events')
+const collections = entityRef('collections')
+// English is the base language of every catalogue in the platform: every list,
+// label and fallback reads it. A record the visitor reads in another language
+// is resolved on the sheet itself, by viewer-core's `useRecordLanguage`; which
+// languages the site offers is decided once, in dataset.config.js, by
+// viewer-core's `offeredLanguages` over this site's own declared list.
 const defaultLang = 'en'
 
 // Legacy project key (e.g. 'ISL', 'EPM') by project UUID — manifest.json's
@@ -48,82 +41,58 @@ function itemProjectKey(item) {
 // pages (display_status 'N'): excluded from database search and Permanent
 // Collection browsing, exactly like the legacy site
 // (modules/database_results.php AND o.display_status='A').
-const publicItems = computed(() => items.value.filter(i => i.display_status !== 'N'))
+const publicItems = computed(() => (items.value ?? []).filter(i => i.display_status !== 'N'))
 
-const { loadTranslations } = useDataPackage()
+// ── Translations ───────────────────────────────────────────────────────────
+//
+// One file per entity per language, resolved by name through viewer-core:
+// never `import(`…${lang}…`)`, which a bundler cannot resolve statically and
+// so bundles every language of an entity eagerly. That is what made
+// islamicart's build (same pattern, larger dataset) unable to finish in CI.
+// English drives every list and label and is loaded once; another language is
+// loaded on demand by the page that reads it, and an entity not covered in
+// that language falls back to English.
 
-const enItemTranslations = ref({})
-const enCountryTranslations = ref({})
-const enPartnerTranslations = ref({})
-const enTimelineEventTranslations = ref({})
-const enCollectionTranslations = ref({})
-const translationsCache = ref({}) // lang -> item translations (for detail view)
+const { availableLanguages, loadTranslations, translations } = dataPackage
 
-let enLoaded = false
+/** One record's translated fields, falling back to English then to nothing. */
+function tr(entity, id, lang = defaultLang) {
+  return dataPackage.tr(entity, id, lang, defaultLang)
+}
 
-// Every translation file is loaded by name through useDataPackage — which
-// only binds files that actually exist in the installed package, resolving
-// absent ones to empty maps — never by a dynamic import with an interpolated
-// specifier (`import(`...${lang}...`)`), which a bundler can't resolve
-// statically and so bundles every language eagerly instead of lazily loading
-// the one asked for. That is what made islamicart's build (same pattern,
-// larger dataset) unable to finish in CI.
-async function loadEnglishTranslations() {
-  if (enLoaded) return
-  enLoaded = true
-  const [itemsT, countriesT, partnersT, timelineEventsT, collectionsT] = await Promise.all([
-    loadTranslations('items', 'en'),
-    loadTranslations('countries', 'en'),
-    loadTranslations('partners', 'en'),
-    loadTranslations('timeline_events', 'en'),
-    loadTranslations('collections', 'en'),
-  ])
-  enItemTranslations.value = itemsT
-  enCountryTranslations.value = countriesT
-  enPartnerTranslations.value = partnersT
-  enTimelineEventTranslations.value = timelineEventsT
-  enCollectionTranslations.value = collectionsT
-  // Seed English into the detail-view cache too
-  if (!translationsCache.value['en']) {
-    translationsCache.value = { ...translationsCache.value, en: enItemTranslations.value }
+const EN_ENTITIES = ['items', 'countries', 'partners', 'timeline_events', 'collections']
+
+let englishReady = null
+function loadEnglishTranslations() {
+  if (!englishReady) {
+    englishReady = Promise.all(EN_ENTITIES.map(e => loadTranslations(e, defaultLang)))
   }
+  return englishReady
 }
-
-async function loadLangTranslations(lang) {
-  if (translationsCache.value[lang]) return
-  const data = await loadTranslations('items', lang)
-  translationsCache.value = { ...translationsCache.value, [lang]: data }
-}
-
-// Call immediately so lists are populated as soon as the app boots
 loadEnglishTranslations()
 
 // ── Label helpers (always English) ─────────────────────────────────────────
 
 function itemLabel(item) {
   if (!item) return ''
-  return mdStrip(enItemTranslations.value[item.id]?.name ?? item.internal_name ?? item.id)
+  return mdStrip(tr('items', item.id).name ?? item.internal_name ?? item.id)
 }
 
 function countryLabel(countryId) {
   if (!countryId) return ''
-  const fallback = countries.value.find(c => c.id === countryId)
-  return mdStrip(enCountryTranslations.value[countryId]?.name ?? fallback?.internal_name ?? countryId)
+  const fallback = (countries.value ?? []).find(c => c.id === countryId)
+  return mdStrip(tr('countries', countryId).name ?? fallback?.internal_name ?? countryId)
 }
 
 function partnerLabel(partnerId) {
   if (!partnerId) return ''
-  const fallback = partners.value.find(p => p.id === partnerId)
-  return mdStrip(enPartnerTranslations.value[partnerId]?.name ?? fallback?.id ?? partnerId)
+  const fallback = (partners.value ?? []).find(p => p.id === partnerId)
+  return mdStrip(tr('partners', partnerId).name ?? fallback?.id ?? partnerId)
 }
 
 // ── Lookup maps ────────────────────────────────────────────────────────────
 
-const itemById = computed(() => {
-  const m = {}
-  for (const item of items.value) m[item.id] = item
-  return m
-})
+const itemById = byId('items')
 
 // ── Exhibitions ────────────────────────────────────────────────────────────
 //
@@ -141,13 +110,13 @@ const itemById = computed(() => {
 // The data package is single-context (one SH project), so each `*-root`
 // purpose occurs at most once.
 function findByPurpose(purpose) {
-  return collections.value.find(c => c.purpose === purpose) ?? null
+  return (collections.value ?? []).find(c => c.purpose === purpose) ?? null
 }
 
 const exhibitions = computed(() => {
   const marker = findByPurpose('exhibitions-root')
   if (!marker) return []
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === marker.id)
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 })
@@ -165,12 +134,12 @@ function exhibitionById(id) {
 // Context is ever rendered).
 
 function exhibitionThemes(exhibitionId) {
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === exhibitionId && c.type === 'theme')
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
     .map(theme => ({
       ...theme,
-      chapters: collections.value
+      chapters: (collections.value ?? [])
         .filter(c => c.parent_id === theme.id)
         .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999)),
     }))
@@ -197,7 +166,7 @@ function chapterById(exhibitionId, themeId, chapterId) {
 const historicalBackgroundRecords = computed(() => {
   const marker = findByPurpose('historical-profiles-root')
   if (!marker) return []
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === marker.id)
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 })
@@ -213,7 +182,7 @@ const historicalBackgroundProfiles = computed(() =>
 )
 
 function historicalBackgroundPages(recordId) {
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === recordId)
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 }
@@ -232,7 +201,7 @@ function historicalBackgroundPages(recordId) {
 const hbGeneralPerspectives = computed(() => {
   const root = findByPurpose('historical-background-root')
   if (!root) return []
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === root.id && c.purpose !== 'topics-root')
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 })
@@ -240,7 +209,7 @@ const hbGeneralPerspectives = computed(() => {
 const hbGeneralTopics = computed(() => {
   const root = findByPurpose('topics-root')
   if (!root) return []
-  return collections.value
+  return (collections.value ?? [])
     .filter(c => c.parent_id === root.id)
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 })
@@ -253,8 +222,8 @@ const hbGeneralTopics = computed(() => {
 // exporter). The legacy timeline page filters by period × country ×
 // exhibition, with a thematic-vs-Permanent-Collection toggle.
 
-const pcTimelines = computed(() => timelines.value.filter(t => t.collection_id === null))
-const thematicTimelines = computed(() => timelines.value.filter(t => t.collection_id !== null))
+const pcTimelines = computed(() => (timelines.value ?? []).filter(t => t.collection_id === null))
+const thematicTimelines = computed(() => (timelines.value ?? []).filter(t => t.collection_id !== null))
 
 // ── Item cross-links: Artistic Introduction pages / Exhibitions that
 // feature a given item ───────────────────────────────────────────────────
@@ -266,7 +235,7 @@ const thematicTimelines = computed(() => timelines.value.filter(t => t.collectio
 // the islamicart parity backlog.
 
 function collectionsContainingItem(itemId) {
-  return collections.value.filter(c => c.items?.some(it => it.id === itemId))
+  return (collections.value ?? []).filter(c => c.items?.some(it => it.id === itemId))
 }
 
 function exhibitionLinksForItem(itemId) {
@@ -284,13 +253,13 @@ function exhibitionLinksForItem(itemId) {
     if (c.parent_id === marker.id) {
       exhibition = c
     } else {
-      const parent = collections.value.find(t => t.id === c.parent_id)
+      const parent = (collections.value ?? []).find(t => t.id === c.parent_id)
       if (parent && parent.parent_id === marker.id) {
         // c is a theme directly under an exhibition
         exhibition = parent
         themeId = c.id
       } else {
-        const grandparent = parent && collections.value.find(e => e.id === parent.parent_id)
+        const grandparent = parent && (collections.value ?? []).find(e => e.id === parent.parent_id)
         if (grandparent && grandparent.parent_id === marker.id) {
           // c is a chapter under a theme under an exhibition
           exhibition = grandparent
@@ -305,7 +274,7 @@ function exhibitionLinksForItem(itemId) {
     links.push({
       exhibitionId: exhibition.id,
       themeId,
-      label: enCollectionTranslations.value[exhibition.id]?.title ?? exhibition.internal_name,
+      label: tr('collections', exhibition.id).title ?? exhibition.internal_name,
     })
   }
   return links
@@ -319,15 +288,15 @@ function chapterLinksForItem(itemId) {
   const links = []
   for (const c of collectionsContainingItem(itemId)) {
     if (c.type !== 'subtheme') continue
-    const theme = collections.value.find(t => t.id === c.parent_id)
-    const ex = theme && collections.value.find(e => e.id === theme.parent_id)
+    const theme = (collections.value ?? []).find(t => t.id === c.parent_id)
+    const ex = theme && (collections.value ?? []).find(e => e.id === theme.parent_id)
     if (!ex || ex.parent_id !== marker.id) continue
     links.push({
       exhibitionId: ex.id,
       themeId: theme.id,
       chapterId: c.id,
-      label: enCollectionTranslations.value[c.id]?.title ?? c.internal_name,
-      exhibitionLabel: enCollectionTranslations.value[ex.id]?.title ?? ex.internal_name,
+      label: tr('collections', c.id).title ?? c.internal_name,
+      exhibitionLabel: tr('collections', ex.id).title ?? ex.internal_name,
     })
   }
   return links
@@ -343,8 +312,8 @@ function chapterLinksForItem(itemId) {
 // importer; rendering it here would hide the one thing worth seeing, and it
 // would make a museum record the single input this site trusts with markup.
 //
-// mdStrip stays on marked: it lexes, it renders nothing, and it already
-// discards raw HTML nodes rather than passing them on.
+// The three renderers are viewer-core's, and there is no fourth: a website
+// neither defines a rendering rule nor imports the Markdown library.
 function md(text, glossary) {
   if (!text) return ''
   return renderBlock(text, { breaks: true, glossary })
@@ -357,19 +326,9 @@ function mdInline(text, glossary) {
 }
 
 // Strip all markdown to plain text (for alt attributes, search matching, etc.)
-// Walks marked's inline token tree directly — no HTML intermediate, no regex.
 function mdStrip(text) {
   if (!text) return ''
-  function tokensToText(tokens) {
-    return tokens.map(t => {
-      if (t.tokens?.length) return tokensToText(t.tokens)
-      if (t.type === 'image') return t.text ?? ''   // alt text
-      if (t.type === 'html') return ''              // discard raw HTML nodes
-      if (t.type === 'br' || t.type === 'softbreak') return ' '
-      return t.text ?? ''
-    }).join('')
-  }
-  return tokensToText(marked.Lexer.lexInline(text))
+  return renderPlain(text)
 }
 
 export function useInventoryData() {
@@ -383,16 +342,12 @@ export function useInventoryData() {
     thematicTimelines,
     timelineEvents,
     collections,
-    availableLangs,
     defaultLang,
-    enItemTranslations,
-    enCountryTranslations,
-    enPartnerTranslations,
-    enTimelineEventTranslations,
-    enCollectionTranslations,
-    translationsCache,
+    availableLanguages,
+    loadTranslations,
+    translations,
+    tr,
     loadEnglishTranslations,
-    loadLangTranslations,
     itemLabel,
     countryLabel,
     partnerLabel,

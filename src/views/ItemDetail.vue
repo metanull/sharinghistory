@@ -1,48 +1,53 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from '@metanull/viewer-core'
+import { languageLabels, useI18n, useRecordLanguage } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route  = useRoute()
 const router = useRouter()
 
 const {
-  items, partners,
-  availableLangs, defaultLang,
-  translationsCache,
-  loadLangTranslations,
+  items,
+  partners,
   itemById,
-  itemLabel, countryLabel, partnerLabel,
+  itemLabel,
+  countryLabel,
+  partnerLabel,
   exhibitionLinksForItem,
-  md, mdInline,
+  md,
+  mdInline,
+  tr,
+  translations,
+  loadTranslations,
 } = useInventoryData()
 
 // ── Active item & language ────────────────────────────────────────────
 
-const item = computed(() => itemById.value[decodeURIComponent(route.params.id)] ?? null)
+const item = computed(() => itemById.value.get(decodeURIComponent(route.params.id)) ?? null)
 
-// Only languages this specific item actually has a translation for — not every
-// site language (most items are translated into a handful of languages, not all).
-const itemLangs = computed(() => {
-  const langs = item.value?.languages
-  return langs?.length ? langs : availableLangs.value
-})
+const { t } = useI18n()
 
-// Content language follows the global site language when this item has a
-// translation for it; otherwise fall back to the default pick (defaultLang if
-// available, else the item's first language). Recomputes on navigation, so no
-// per-item reset watcher is needed.
-const { locale, t } = useI18n()
-const activeLang = computed(() =>
-  itemLangs.value.includes(locale.value)
-    ? locale.value
-    : (itemLangs.value.includes(defaultLang) ? defaultLang : (itemLangs.value[0] ?? defaultLang))
-)
+// The record's language, not the site's. It follows the site language where
+// this item carries it, English where it does not, and the item's first
+// language where it has neither — and the visitor may toggle it here, a
+// choice that stays on this sheet and never touches the site language or the
+// URL. Only the languages this item actually has a translation for are
+// offered: most items are translated into a handful, not all.
+const {
+  language: activeLang,
+  languages: itemLangs,
+  dir: contentDir,
+  select: selectLanguage,
+} = useRecordLanguage(item, { entity: 'items' })
 
 watch(activeLang, lang => {
-  loadLangTranslations(lang)
+  loadTranslations('items', lang)
 }, { immediate: true })
+
+// The switcher's labels: the language's own name where the package declares
+// one, its code in capitals where it does not.
+const recordLanguages = computed(() => languageLabels(itemLangs.value))
 
 // ── Translation helpers ───────────────────────────────────────────────
 
@@ -52,7 +57,7 @@ watch(activeLang, lang => {
 // something other than a written-out name.
 function itemText(it) {
   if (!it) return {}
-  return translationsCache.value[activeLang.value]?.[it.id] ?? {}
+  return tr('items', it.id, activeLang.value) ?? {}
 }
 
 function labelText(it) {
@@ -65,10 +70,6 @@ function labelHtml(it) {
   return mdInline(itemText(it).name ?? it.internal_name ?? it.id, glossaryEntries.value)
 }
 
-// Item content (not the app's own English interface) follows the active
-// language's natural direction — Arabic reads right-to-left.
-const contentDir = computed(() => (activeLang.value === 'ar' ? 'rtl' : 'ltr'))
-
 // ── Glossary term highlighting ────────────────────────────────────────
 //
 // Legacy wires known glossary words/phrases directly into item text (e.g.
@@ -80,19 +81,12 @@ const contentDir = computed(() => (activeLang.value === 'ar' ? 'rtl' : 'ltr'))
 // resulting spans are still handled via event delegation (v-html content
 // isn't part of Vue's own template, so it can't bind @click directly).
 
-const glossaryTranslationsCache = ref({})
-
-async function loadGlossaryTranslations(lang) {
-  if (glossaryTranslationsCache.value[lang]) return
-  try {
-    const m = await import(`@inventory-data/translations/glossary.${lang}.json`)
-    glossaryTranslationsCache.value = { ...glossaryTranslationsCache.value, [lang]: m.default }
-  } catch {
-    glossaryTranslationsCache.value = { ...glossaryTranslationsCache.value, [lang]: {} }
-  }
-}
-
-watch(activeLang, lang => loadGlossaryTranslations(lang), { immediate: true })
+// The glossary rows come through viewer-core like every other translation
+// file, by name. An interpolated `import(\`…${lang}…\`)` is what has to be
+// avoided: a bundler cannot resolve one statically, so it bundles every
+// language of the entity eagerly — the pattern that made a sibling site's
+// build unable to finish.
+watch(activeLang, lang => loadTranslations('glossary', lang), { immediate: true })
 
 // { id, spelling, definition } for this item's glossary terms in the active
 // language — id/spelling is exactly the shape renderBlock/renderInline's
@@ -100,7 +94,7 @@ watch(activeLang, lang => loadGlossaryTranslations(lang), { immediate: true })
 const glossaryEntries = computed(() => {
   const ids = item.value?.glossary_ids ?? []
   if (!ids.length) return []
-  const byLang = glossaryTranslationsCache.value[activeLang.value] ?? {}
+  const byLang = translations('glossary', activeLang.value)
   const entries = []
   for (const id of ids) {
     const entry = byLang[id]
@@ -137,7 +131,7 @@ const relatedItems = computed(() => {
   const seen = new Set()
   return links
     .map(link => {
-      const it = itemById.value[link.id]
+      const it = itemById.value.get(link.id)
       if (!it || seen.has(it.id)) return null
       seen.add(it.id)
       return { item: it, justifications: link.justifications ?? {} }
@@ -368,10 +362,24 @@ function back() {
     <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.action.backToResults') }}</a>
     <router-link v-if="timelineLink" :to="timelineLink" class="timeline-link">{{ $t('sharinghistory.action.viewOnTimeline') }} →</router-link>
 
-    <!-- Language selector for item content — only languages this item actually has -->
     <div class="detail content-box" @click="onDetailClick">
       <!-- Type badge -->
       <div class="detail-type-badge">{{ item.type }}</div>
+
+      <!-- The record's own language. Reading this sheet in another language
+           leaves the site language, and the URL, untouched. -->
+      <div class="record-languages" v-if="recordLanguages.length > 1">
+        <button
+          v-for="entry in recordLanguages"
+          :key="entry.code"
+          type="button"
+          class="record-language"
+          :class="{ 'record-language--active': entry.code === activeLang }"
+          :aria-pressed="entry.code === activeLang ? 'true' : 'false'"
+          :lang="entry.code"
+          @click="selectLanguage(entry.code)"
+        >{{ entry.label }}</button>
+      </div>
 
       <!-- Title -->
       <h1 class="detail-title" :dir="contentDir" v-html="labelHtml(item)" />
@@ -551,6 +559,30 @@ function back() {
   padding: 2px 8px;
   margin-bottom: 10px;
   font-family: 'Roboto', sans-serif;
+}
+
+.record-languages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.record-language {
+  font: inherit;
+  font-size: 12px;
+  padding: 2px 8px;
+  cursor: pointer;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: 'Roboto', sans-serif;
+}
+.record-language:hover { border-color: var(--accent); }
+.record-language--active {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .detail-title {
