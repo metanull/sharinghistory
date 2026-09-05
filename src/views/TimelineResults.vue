@@ -8,8 +8,14 @@ const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const {
-  timelines, timelineEvents, countryLabel, enTimelineEventTranslations, md,
-  exhibitions, enCollectionTranslations, itemById, itemLabel,
+  timelines,
+  timelineEvents,
+  countryLabel,
+  md,
+  exhibitions,
+  itemById,
+  itemLabel,
+  tr,
 } = useInventoryData()
 
 const PAGE_SIZE = 15
@@ -74,7 +80,7 @@ const availableExhibitions = computed(() => {
   const boundIds = new Set(timelines.value.map(t => t.collection_id).filter(Boolean))
   return exhibitions.value
     .filter(e => boundIds.has(e.id))
-    .map(e => ({ id: e.id, name: enCollectionTranslations.value[e.id]?.title ?? e.internal_name }))
+    .map(e => ({ id: e.id, name: tr('collections', e.id)?.title ?? e.internal_name }))
 })
 
 const timelineById = computed(() => {
@@ -131,7 +137,7 @@ const filteredEvents = computed(() => {
 // Items linked to an event (real curated links from the legacy timeline
 // illustrations); tolerate ids not present in the export.
 function eventItems(event) {
-  return (event.item_ids ?? []).map(id => itemById.value[id]).filter(Boolean)
+  return (event.item_ids ?? []).map(id => itemById.value.get(id)).filter(Boolean)
 }
 
 // Legacy hcr_result.php labels every row "Country | Theme"; PC-timeline
@@ -140,7 +146,7 @@ function eventThemeLabel(event) {
   const t = timelineById.value[event.timeline_id]
   if (!t) return ''
   if (t.collection_id === null) return 'Political Context'
-  return enCollectionTranslations.value[t.collection_id]?.title ?? ''
+  return tr('collections', t.collection_id)?.title ?? ''
 }
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredEvents.value.length / PAGE_SIZE)))
@@ -155,13 +161,12 @@ function goToPage(n) {
   const q = { ...route.query, page: String(n) }
   if (n === 1) delete q.page
   router.replace({ path: '/timeline/results', query: q })
-  window.scrollTo(0, 0)
 }
 
 // ── Display helpers ──────────────────────────────────────────────────────
 
 function dateRangeLabel(event) {
-  const t = enTimelineEventTranslations.value[event.id]
+  const t = tr('timeline_events', event.id)
   if (t?.date_from_description) {
     return t.date_to_description
       ? `${t.date_from_description} – ${t.date_to_description}`
@@ -250,7 +255,7 @@ const activeFilterLabel = computed(() => {
             </div>
             <div
               class="timeline-description"
-              v-html="md(enTimelineEventTranslations[event.id]?.description ?? '')"
+              v-html="md(tr('timeline_events', event.id)?.description ?? '')"
             />
 
             <div v-if="event.images?.length || eventItems(event).length" class="timeline-media-row">

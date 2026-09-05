@@ -1,19 +1,23 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
 const router = useRouter()
 const {
   itemById,
-  availableLangs, defaultLang,
-  translationsCache, loadLangTranslations,
+  availableLanguages,
+  defaultLang,
   partnerLabel,
-  exhibitionById, exhibitionThemeById, chapterById,
-  enCollectionTranslations,
-  md, mdInline,
+  exhibitionById,
+  exhibitionThemeById,
+  chapterById,
+  md,
+  mdInline,
+  tr,
+  loadTranslations,
 } = useInventoryData()
 
 const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params.exhibitionId)) ?? null)
@@ -47,38 +51,28 @@ function goToChapter(idx) {
 // ── Language selector ───────────────────────────────────────────────────
 
 const { locale } = useI18n()
-const activeLang = computed(() => availableLangs.value.includes(locale.value) ? locale.value : defaultLang)
-const collectionLangCache = ref({})
-
-async function loadCollectionLangTranslations(lang) {
-  if (collectionLangCache.value[lang]) return
-  try {
-    const m = await import(`@inventory-data/translations/collections.${lang}.json`)
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: m.default }
-  } catch {
-    collectionLangCache.value = { ...collectionLangCache.value, [lang]: {} }
-  }
-}
+const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
+// Collection texts in the record language. They come through viewer-core by
+// name, like every other translation file: an interpolated
+// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
+// in every language of the entity eagerly.
 
 watch(activeLang, lang => {
-  loadCollectionLangTranslations(lang)
-  loadLangTranslations(lang)
+  loadTranslations('collections', lang)
+  loadTranslations('items', lang)
 }, { immediate: true })
 
 function collectionText(collectionId) {
-  // Fall back to the English record when the active language has none, the
-  // way HistoricalBackgroundCountry already does. The site's language list is
-  // derived from the item translations and the package's coverage per entity
-  // does not line up with it, so a language a visitor can pick may ship no
-  // collections file at all — without this the chapter renders blank.
-  return collectionLangCache.value[activeLang.value]?.[collectionId]
-    ?? enCollectionTranslations.value[collectionId]
-    ?? {}
+  // `tr` falls back to the English record when the active language has none,
+  // which this page needs: the site's language list is derived from the item
+  // translations, and the package's coverage per entity does not line up with
+  // it, so a language a visitor can pick may ship no collections file at all.
+  return tr('collections', collectionId, activeLang.value)
 }
 
 function resolveTitle(collectionId, fallbackName) {
   return collectionText(collectionId).title
-    ?? enCollectionTranslations.value[collectionId]?.title
+    ?? tr('collections', collectionId)?.title
     ?? fallbackName
 }
 
@@ -87,7 +81,7 @@ function resolveTitle(collectionId, fallbackName) {
 const chapterExtra = computed(() => {
   const c = chapter.value
   if (!c) return {}
-  return collectionText(c.id).extra ?? enCollectionTranslations.value[c.id]?.extra ?? {}
+  return collectionText(c.id).extra ?? tr('collections', c.id)?.extra ?? {}
 })
 
 // ── Item grid with curated justifications ───────────────────────────────
@@ -104,7 +98,7 @@ const gridItems = computed(() => {
   const c = chapter.value
   if (!c) return []
   return (c.items ?? [])
-    .map(entry => ({ entry, item: itemById.value[entry.id] }))
+    .map(entry => ({ entry, item: itemById.value.get(entry.id) }))
     .filter(({ item }) => item)
 })
 
@@ -144,7 +138,7 @@ const selectedDisplay = computed(() => {
   }
 
   const caption = sel.entry.caption?.[activeLang.value] ?? sel.entry.caption?.en ?? {}
-  const t = translationsCache.value[activeLang.value]?.[sel.item.id] ?? {}
+  const t = tr('items', sel.item.id, activeLang.value) ?? {}
   return {
     name: caption.name ?? t.name ?? sel.item.internal_name ?? sel.item.id,
     date: caption.date ?? t.dates ?? '',

@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
+import { useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 // Legacy exhibitions/AWE/bibliography.php — the per-exhibition "Further
@@ -11,13 +11,19 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 // English translation already carries all languages.
 const route = useRoute()
 const router = useRouter()
-const { exhibitionById, enCollectionTranslations, md, mdInline, mdStrip } = useInventoryData()
+const {
+  exhibitionById,
+  md,
+  mdInline,
+  mdStrip,
+  tr,
+} = useInventoryData()
 
 const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params.exhibitionId)) ?? null)
 
 const text = computed(() => {
   const e = exhibition.value
-  return e ? (enCollectionTranslations.value[e.id] ?? {}) : {}
+  return e ? (tr('collections', e.id) ?? {}) : {}
 })
 
 const bibliography = computed(() => text.value.extra?.bibliography ?? {})

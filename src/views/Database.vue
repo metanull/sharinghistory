@@ -5,8 +5,14 @@ import { I18nText, useI18n } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const router = useRouter()
-const { availableLangs } = useInventoryData()
+const { availableLanguages } = useInventoryData()
 const { t } = useI18n()
+
+// The languages the search can be restricted to. These are the languages the
+// item translations carry, not the site interface languages: restricting a
+// search to a language the records were never written in returns nothing, and
+// a visitor cannot tell that apart from a genuinely empty result.
+const searchLanguages = computed(() => availableLanguages('items'))
 
 // Matches legacy database.php's field options, in order — this site has no
 // Period / Dynasty field. `value` is the query parameter and never a text;
@@ -137,7 +143,7 @@ function showAll() {
             <td>
               <select v-model="searchLanguage" style="width:120px">
                 <option value="">{{ $t('sharinghistory.search.anyLanguage') }}</option>
-                <option v-for="lang in availableLangs" :key="lang" :value="lang">{{ lang.toUpperCase() }}</option>
+                <option v-for="lang in searchLanguages" :key="lang" :value="lang">{{ lang.toUpperCase() }}</option>
               </select>
             </td>
           </tr>
