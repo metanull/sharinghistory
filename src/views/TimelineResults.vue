@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from '@metanull/viewer-core'
+import { useI18n, usePagination } from '@metanull/viewer-core'
+import { Pagination } from '@metanull/viewer-layout/content'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const route = useRoute()
@@ -149,12 +150,8 @@ function eventThemeLabel(event) {
   return tr('collections', t.collection_id)?.title ?? ''
 }
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredEvents.value.length / PAGE_SIZE)))
-
-const pagedEvents = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE
-  return filteredEvents.value.slice(start, start + PAGE_SIZE)
-})
+const pageInfo = usePagination(filteredEvents, { page: currentPage, size: PAGE_SIZE })
+const pagedEvents = computed(() => pageInfo.value.rows)
 
 function goToPage(n) {
   currentPage.value = n
@@ -188,8 +185,8 @@ function itemsLink(event) {
 const activeFilterLabel = computed(() => {
   const parts = []
   if (filterCountry.value) parts.push(countryLabel(filterCountry.value))
-  if (filterBegin.value) parts.push(`${t('sharinghistory.filter.from')} ${filterBegin.value}`)
-  if (filterEnd.value) parts.push(`${t('sharinghistory.filter.to')} ${filterEnd.value}`)
+  if (filterBegin.value) parts.push(`${t('catalogue.filter.from')} ${filterBegin.value}`)
+  if (filterEnd.value) parts.push(`${t('catalogue.filter.to')} ${filterEnd.value}`)
   return parts.length ? parts.join(' — ') : null
 })
 </script>
@@ -205,12 +202,12 @@ const activeFilterLabel = computed(() => {
 
     <!-- Filter panel -->
     <div class="content-box filter-panel">
-      <strong class="filter-label">{{ $t('sharinghistory.filter.heading') }}</strong>
+      <strong class="filter-label">{{ $t('catalogue.filter.heading') }}</strong>
 
       <div class="filter-row">
-        <label>{{ $t('sharinghistory.filter.country') }}</label>
+        <label>{{ $t('catalogue.facet.country') }}</label>
         <select v-model="filterCountry" style="width:200px">
-          <option value="">{{ $t('sharinghistory.filter.any') }}</option>
+          <option value="">{{ $t('catalogue.facet.any') }}</option>
           <option v-for="c in availableCountries" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
       </div>
@@ -225,18 +222,18 @@ const activeFilterLabel = computed(() => {
       </div>
 
       <div class="filter-row">
-        <label>{{ $t('sharinghistory.filter.fromYear') }}</label>
+        <label>{{ $t('catalogue.facet.fromYear') }}</label>
         <input type="number" v-model="filterBegin" :placeholder="$t('sharinghistory.filter.fromYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-row">
-        <label>{{ $t('sharinghistory.filter.toYear') }}</label>
+        <label>{{ $t('catalogue.facet.toYear') }}</label>
         <input type="number" v-model="filterEnd" :placeholder="$t('sharinghistory.filter.toYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-actions">
-        <button class="btn" @click="applyFilters">{{ $t('sharinghistory.action.apply') }}</button>
-        <button class="btn btn-secondary" style="margin-left:8px" @click="resetFilters">{{ $t('sharinghistory.action.reset') }}</button>
+        <button class="btn" @click="applyFilters">{{ $t('core.action.apply') }}</button>
+        <button class="btn btn-secondary" style="margin-left:8px" @click="resetFilters">{{ $t('core.action.reset') }}</button>
       </div>
     </div>
 
@@ -290,23 +287,7 @@ const activeFilterLabel = computed(() => {
 
       <p v-else class="no-results">{{ $t('sharinghistory.results.noEvents') }}</p>
 
-      <!-- Pagination -->
-      <div v-if="totalPages > 1" class="pagination">
-        <span class="pagination-info">
-          {{ currentPage }} / {{ totalPages }}
-        </span>
-        <button class="page-btn" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">‹ {{ $t('core.pagination.previous') }}</button>
-        <template v-for="p in totalPages" :key="p">
-          <button
-            v-if="Math.abs(p - currentPage) <= 3 || p === 1 || p === totalPages"
-            class="page-btn"
-            :class="{ active: p === currentPage }"
-            @click="goToPage(p)"
-          >{{ p }}</button>
-          <span v-else-if="Math.abs(p - currentPage) === 4" class="page-ellipsis">…</span>
-        </template>
-        <button class="page-btn" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">{{ $t('core.pagination.next') }} ›</button>
-      </div>
+      <Pagination :page-info="pageInfo" :window="7" @navigate="goToPage" />
     </div>
   </div>
 </template>
@@ -411,5 +392,4 @@ const activeFilterLabel = computed(() => {
   color: var(--nav-active);
 }
 
-.page-ellipsis { padding: 4px 4px; color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 12px; }
 </style>
