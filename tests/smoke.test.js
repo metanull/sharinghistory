@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createViewer, mergeMessages } from '@metanull/viewer-core'
+import { createViewer, mergeMessages, useDataPackage } from '@metanull/viewer-core'
 import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
@@ -26,7 +26,15 @@ describe('website smoke test', () => {
   it('mounts against the configured data package', async () => {
     const { app, host } = await mountSite()
 
-    expect(host.textContent).toContain(config.siteName)
+    // The site name comes from the package alone, which is the rule. This
+    // package's English name is the project's full title with its subtitle,
+    // while the lockup renders the short title over a strapline — so the two
+    // are not one string, and asserting the page shows `siteName` would only
+    // pass once a name was written back into the config. The config carries
+    // the manifest; the page carries the lockup.
+    const { manifest } = useDataPackage()
+    expect(config.siteName).toBe(manifest.site.names.en)
+    expect(host.textContent).toContain(ownTexts['sharinghistory.identity.title'])
     expect(host.querySelector('.mwnf-page')).not.toBeNull()
 
     // The website's own Home view (registered under the route name 'home')
@@ -86,10 +94,12 @@ describe('website smoke test', () => {
   }, 20000)
 
   it('offers only what the site declares and the package can serve', () => {
-    expect(checkOfferedLanguages(config)).toEqual([])
     // This site narrows the package's declared set to its own list, which is
     // the point of languages.js: a language whose item sheets would all read
-    // English is worse than no switcher at all.
+    // English is worse than no switcher at all. The check is given the same
+    // list the config gives offeredLanguages(), so it holds the site to the
+    // rule it applies rather than to the package's wider declaration.
+    expect(checkOfferedLanguages(config, { declared: OFFERED_LANGUAGES })).toEqual([])
     for (const code of config.languages) {
       expect(OFFERED_LANGUAGES).toContain(code)
     }
