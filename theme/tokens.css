@@ -132,4 +132,30 @@
   --mwnf-pagination-active-background: #990000;
   --mwnf-pagination-active-text: #ffffff;
   --mwnf-pagination-position-color: #5a5a5a;
+
+  /* ---------- Content: the landing page ---------- */
+  /* Section cards and the item on display as the legacy site drew them:
+     white boxes with the red rule on top, the verb in dark red. */
+  --mwnf-card-columns: 3;
+  --mwnf-card-gap: 16px;
+  --mwnf-card-padding: 20px;
+  --mwnf-card-background: #ffffff;
+  --mwnf-card-border: 1px solid #b08c8c;
+  --mwnf-card-radius: 0;
+  --mwnf-card-title-size: 1rem;
+  --mwnf-card-title-color: #750101;
+  --mwnf-card-text-size: 0.8125rem;
+  --mwnf-card-text-color: #5a5a5a;
+  --mwnf-card-action-color: #990000;
+  --mwnf-card-action-weight: 500;
+  --mwnf-featured-heading-size: 1.125rem;
+  --mwnf-featured-heading-color: #750101;
+  --mwnf-featured-image-width: 200px;
+  --mwnf-featured-image-height: 160px;
+  --mwnf-featured-image-border: 1px solid #b08c8c;
+  --mwnf-featured-eyebrow-size: 0.625rem;
+  --mwnf-featured-name-size: 1.125rem;
+  --mwnf-featured-name-color: #750101;
+  --mwnf-featured-meta-size: 0.8125rem;
+  --mwnf-featured-meta-color: #5a5a5a;
 }
