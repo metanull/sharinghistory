@@ -141,12 +141,17 @@ function eventItems(event) {
   return (event.item_ids ?? []).map(id => itemById.value.get(id)).filter(Boolean)
 }
 
-// Legacy hcr_result.php labels every row "Country | Theme"; a Permanent
-// Collection timeline event has no bound collection, so the theme portion
-// resolves empty and the row shows the country alone.
+// Legacy hcr_result.php labels every row "Country | Theme". A Permanent
+// Collection timeline event has no bound collection — legacy themed those
+// rows "Political Context" (it IS the political-context chronology), so
+// that label is a translated string here, not the hard-coded literal this
+// used to be.
 function eventThemeLabel(event) {
-  const t = timelineById.value[event.timeline_id]
-  return t ? (tr('collections', t.collection_id)?.title ?? '') : ''
+  const timeline = timelineById.value[event.timeline_id]
+  if (!timeline) return ''
+  return timeline.collection_id === null
+    ? t('sharinghistory.timeline.politicalContext')
+    : (tr('collections', timeline.collection_id)?.title ?? '')
 }
 
 const pageInfo = usePagination(filteredEvents, { page: currentPage, size: PAGE_SIZE })
