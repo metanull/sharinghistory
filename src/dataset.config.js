@@ -126,6 +126,7 @@ export default {
       path: '/partner/:id',
       name: 'partner',
       component: () => import('./views/PartnerDetail.vue'),
+      props: (route) => ({ id: decodeURIComponent(route.params.id) }),
       meta: meta('partners', 'partners', 'items', 'countries'),
     },
     {

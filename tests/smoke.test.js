@@ -5,6 +5,8 @@ import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
 import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
 import countryTexts from '@metanull/sharinghistory-data/translations/countries.en.json'
+import itemTexts from '@metanull/sharinghistory-data/translations/items.en.json'
+import partnerTexts from '@metanull/sharinghistory-data/translations/partners.en.json'
 import timelineEventTexts from '@metanull/sharinghistory-data/translations/timeline_events.en.json'
 import { collectionTitle, itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
@@ -456,6 +458,83 @@ describe('website smoke test', () => {
     expect(rowIds.length).toBeGreaterThan(0)
     const visibleIds = new Set(visible.filter((i) => i.country_id === countryId).map((i) => i.id))
     for (const id of rowIds) expect(visibleIds.has(id)).toBe(true)
+
+    app.unmount()
+  }, 60000)
+
+  // The partner list runs on the platform's composed `PartnerListView`
+  // (composables/partner.js): the country accordion and the "Name, City" row
+  // are the shared component's; this website's own scope — a partner needs a
+  // name translation and a country, legacy pm_partner_list.php's INNER
+  // JOINs — decides which of the package's 120 partners the list shows at
+  // all, asserted here against the real fixture count.
+  it('renders the partner list on the composed view, grouped by country with "Name, City" rows', async () => {
+    const [partners] = await loadEntities(['partners'])
+    const fixture = partners.find(
+      (p) => p.country_id && partnerTexts[p.id]?.name && partnerTexts[p.id]?.city && (!p.level || p.level === 'partner'),
+    )
+    expect(fixture, 'fixture: a main partner with a name, a country and a city').not.toBeNull()
+    const countryName = countryTexts[fixture.country_id]?.name
+    expect(countryName, 'fixture: the partner\'s country has an English name').toBeTruthy()
+    const listedCount = partners.filter((p) => p.country_id && partnerTexts[p.id]?.name).length
+
+    const { app, host } = await mountSite('#/partners/results')
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-partner-list__row')).not.toBeNull(), { timeout: 20000 })
+
+    expect(host.querySelector('.section-heading').textContent).toContain('Partners')
+    // The view's own count undercounts a nested child (metanull/viewer-layout#…);
+    // this site walks `groups` itself instead (PartnersResults.vue) — asserted
+    // against the site's own listing rule, not the view's built-in total.
+    expect(host.querySelector('.result-count').textContent).toContain(`Partners found: ${listedCount}`)
+
+    const groupHeadings = Array.from(host.querySelectorAll('.mwnf-partner-list__group-title')).map((el) => el.textContent)
+    expect(groupHeadings.some((heading) => heading.includes(countryName))).toBe(true)
+    const rowNames = Array.from(host.querySelectorAll('.mwnf-partner-list__name')).map((el) => el.textContent)
+    expect(rowNames.some((name) => name.includes(partnerTexts[fixture.id].name) && name.includes(partnerTexts[fixture.id].city))).toBe(true)
+
+    app.unmount()
+  }, 60000)
+
+  // The partner profile runs on the platform's composed `RecordView`
+  // (composables/partner.js): the description/contact/logo rows are the
+  // sheet's own custom-rendered fields, the media gallery is the platform's;
+  // this website's own are the "View Objects" count (the package's
+  // `item_count`, not a local scan) and the held-items grid — the package
+  // models the relation the other way round, an item pointing at its
+  // partner, so `related` (a record's own declared references) does not
+  // reach it and the view's `#related` slot builds it directly.
+  it('renders the partner profile on the composed record view, with its contact block and held items', async () => {
+    const [partners, items] = await loadEntities(['partners', 'items'])
+    const fixture = partners.find(
+      (p) => partnerTexts[p.id]?.description && partnerTexts[p.id]?.phone && p.logos?.length && p.item_count > 0,
+    )
+    expect(fixture, 'fixture: a partner with a description, phone, a logo and held items').not.toBeNull()
+    const text = partnerTexts[fixture.id]
+    const heldItems = items.filter((i) => i.partner_id === fixture.id && i.display_status !== 'N')
+    expect(heldItems.length, 'fixture: the partner\'s held, visible items').toBeGreaterThan(0)
+
+    const { app, host } = await mountSite(`#/partner/${encodeURIComponent(fixture.id)}`)
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-record')).not.toBeNull(), { timeout: 20000 })
+
+    expect(host.querySelector('.detail-title').textContent).toContain(text.name)
+    expect(host.textContent).toContain(text.description.slice(0, 30))
+    expect(host.querySelector('.contact-address').textContent).toBe(text.address)
+    expect(host.textContent).toContain(text.phone)
+    expect(host.querySelector('.logo-img')).not.toBeNull()
+
+    const viewLink = host.querySelector('.view-items-row .btn')
+    expect(viewLink, 'the "View Objects/Monuments" link, off item_count').not.toBeNull()
+    expect(viewLink.textContent).toContain(String(fixture.item_count))
+
+    // The held-items grid, off real fixture text rather than element count alone.
+    const related = host.querySelector('.mwnf-related')
+    expect(related).not.toBeNull()
+    for (const item of heldItems) {
+      const name = itemTexts[item.id]?.name ?? item.internal_name ?? item.id
+      // A held item's name may itself carry Markdown emphasis; strip it so the
+      // assertion reads the same plain text the row renders.
+      expect(related.textContent).toContain(name.replace(/[*_]/g, ''))
+    }
 
     app.unmount()
   }, 60000)

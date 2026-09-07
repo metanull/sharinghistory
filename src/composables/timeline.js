@@ -1,6 +1,6 @@
 import { unref } from 'vue'
 import { eventDateLabel, inDateRange } from '@metanull/viewer-core'
-import { collectionTitle, DATE_MODE, inScope, objectsAndMonumentsSummary } from './catalogue.js'
+import { collectionTitle, DATE_MODE, inScope, itemSummary, objectsAndMonumentsSummary } from './catalogue.js'
 import { useInventoryData } from './useInventoryData.js'
 
 // The timeline, as `TimelineResultsView` specs: what viewer-core's
@@ -143,17 +143,6 @@ export const timelineGallery = {
   recordRoute: 'item',
   empty: 'catalogue.results.noResultsFilter',
   pagination: { window: 7 },
-  record: (item) => {
-    const text = tr('items', item.id)
-    return {
-      id: item.id,
-      image: item.images?.[0]?.url ?? '',
-      imageAlt: labelOf('items', item.id),
-      name: mdInline(text.name ?? item.internal_name ?? item.id),
-      meta: [labelOf('countries', item.country_id), text.dates].filter(Boolean),
-      badge: item.type,
-      to: { name: 'item', params: { id: item.id } },
-    }
-  },
+  record: itemSummary,
   summary: objectsAndMonumentsSummary,
 }
