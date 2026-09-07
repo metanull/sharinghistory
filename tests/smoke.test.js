@@ -251,28 +251,19 @@ describe('website smoke test', () => {
   })
 
   // An item attached to a National Context collection links to the exhibition
-  // introduction (themeId is null), not to the National Context id itself
-  // (which would route to exhibition-theme, a 404 since #55). The fixture
-  // may not have items directly on National Context collections, so this
-  // test documents the expected behavior: if an item were in a National
-  // Context collection (purpose "national-context") that is a child of an
-  // exhibition, exhibitionLinksForItem would return a link with themeId null
-  // (linking to the exhibition introduction), not themeId === nc.id.
+  // introduction (themeId is null), not to the National Context id itself.
   it('links an item in a National Context to its exhibition, not the context', async () => {
-    const [collections] = await loadEntities(['collections'])
-    const nc = collections.find((c) => c.purpose === 'national-context')
-    expect(nc, 'fixture: a National Context collection').toBeDefined()
+    const [collections] = await loadEntities(['collections', 'items'])
+    const nc = collections.find((c) => c.purpose === 'national-context' && c.items?.length)
+    expect(nc, 'fixture: a National Context collection with items').toBeDefined()
+    const itemId = nc.items[0].id
     const exhibition = collections.find((c) => c.id === nc.parent_id)
     expect(exhibition, 'fixture: the National Context collection\'s exhibition').toBeDefined()
 
-    // The logic change is in exhibitionLinksForItem: for a node with
-    // ancestry.length === 1 and purpose === 'national-context', themeId is
-    // set to null instead of node.id. This ensures routing to the exhibition
-    // introduction, not to an exhibition-theme route (which would 404).
-    // National Context collections may not have items attached in all
-    // fixtures, but the structure is verified here.
-    expect(nc.purpose).toBe('national-context')
-    expect(exhibition).toBeDefined()
+    const { exhibitionLinksForItem } = useInventoryData()
+    const links = exhibitionLinksForItem(itemId)
+    expect(links.some((l) => l.exhibitionId === nc.parent_id && l.themeId === null)).toBe(true)
+    expect(links.every((l) => l.themeId !== nc.id)).toBe(true)
   })
 
   // The Historical Background/Profiles pages, and the country page, run on
