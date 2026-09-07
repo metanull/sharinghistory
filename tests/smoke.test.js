@@ -5,6 +5,7 @@ import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
 import { itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
+import { exhibitionTree } from '../src/composables/exhibitions.js'
 import { OFFERED_LANGUAGES } from '../src/languages.js'
 import { useInventoryData } from '../src/composables/useInventoryData.js'
 
@@ -80,6 +81,111 @@ describe('website smoke test', () => {
     )
     expect(rowIds.length).toBeGreaterThan(0)
     for (const id of rowIds) expect(scopedIds.has(id)).toBe(true)
+
+    app.unmount()
+  }, 60000)
+
+  // The theme and chapter pages run on `EssayView`, over the exhibition tree
+  // in composables/exhibitions.js (metanull/viewer-layout#34-36,
+  // sharinghistory#37/#38). Fixtures are found in the package itself rather
+  // than hardcoded: a theme with its own item panel, and a multi-chapter
+  // theme with a following sibling theme, to prove the crossing navigation.
+  // A theme whose own item grid (not a chapter's) carries at least one item.
+  function findThemeWithItems() {
+    const root = exhibitionTree.root.value
+    for (const exhibition of exhibitionTree.children(root.id)) {
+      const theme = exhibitionTree.children(exhibition.id).find((candidate) => candidate.items?.length)
+      if (theme) return { exhibition, theme }
+    }
+    return null
+  }
+
+  it('renders the theme page on EssayView, with its own item panel', async () => {
+    await loadEntities(['collections'])
+    const fixture = findThemeWithItems()
+    expect(fixture, 'fixture: a theme with its own items').not.toBeNull()
+    const { exhibition, theme } = fixture
+
+    const { app, host } = await mountSite(
+      `#/exhibitions/${encodeURIComponent(exhibition.id)}/theme/${encodeURIComponent(theme.id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-essay__panel')).not.toBeNull()
+    expect(host.querySelector('.theme-chapters')).not.toBeNull()
+
+    app.unmount()
+  }, 60000)
+
+  // A chapter whose item grid carries a curator/partner justification pair.
+  function findJustifiedChapter() {
+    const root = exhibitionTree.root.value
+    for (const exhibition of exhibitionTree.children(root.id)) {
+      for (const theme of exhibitionTree.children(exhibition.id)) {
+        for (const chapter of exhibitionTree.children(theme.id)) {
+          const justified = (chapter.items ?? []).some(
+            (entry) => entry.justifications && Object.keys(entry.justifications).length,
+          )
+          if (justified) return { exhibition, theme, chapter }
+        }
+      }
+    }
+    return null
+  }
+
+  it('renders the chapter page on EssayView, with the justification block where the data has one', async () => {
+    await loadEntities(['collections'])
+    const fixture = findJustifiedChapter()
+    expect(fixture, 'fixture: a chapter with a curator/partner justification').not.toBeNull()
+
+    const { app, host } = await mountSite(
+      `#/exhibitions/${encodeURIComponent(fixture.exhibition.id)}/theme/${encodeURIComponent(fixture.theme.id)}/chapter/${encodeURIComponent(fixture.chapter.id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-essay__panel')).not.toBeNull()
+    expect(host.querySelector('.chapter-justification')).not.toBeNull()
+
+    app.unmount()
+  }, 60000)
+
+  it('crosses from a theme\'s last chapter into the next theme', async () => {
+    await loadEntities(['collections'])
+    const root = exhibitionTree.root.value
+    let fixture = null
+    for (const exhibition of exhibitionTree.children(root.id)) {
+      const themes = exhibitionTree.children(exhibition.id)
+      for (let i = 0; i < themes.length - 1; i++) {
+        const chapters = exhibitionTree.children(themes[i].id)
+        if (chapters.length > 1) {
+          fixture = { exhibition, theme: themes[i], nextTheme: themes[i + 1], lastChapter: chapters[chapters.length - 1] }
+          break
+        }
+      }
+      if (fixture) break
+    }
+    expect(fixture, 'fixture: a multi-chapter theme with a following sibling theme').not.toBeNull()
+
+    const { app, host } = await mountSite(
+      `#/exhibitions/${encodeURIComponent(fixture.exhibition.id)}/theme/${encodeURIComponent(fixture.theme.id)}/chapter/${encodeURIComponent(fixture.lastChapter.id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
+    const nextLink = host.querySelector('.mwnf-essay__nav-link--next')
+    expect(nextLink).not.toBeNull()
+    expect(decodeURIComponent(nextLink.getAttribute('href'))).toContain(fixture.nextTheme.id)
+
+    app.unmount()
+  }, 60000)
+
+  it('renders the exhibition further-reading page on LinkListView', async () => {
+    await loadEntities(['collections'])
+    const root = exhibitionTree.root.value
+    const exhibition = exhibitionTree.children(root.id)[0]
+    expect(exhibition, 'fixture: an exhibition').toBeDefined()
+
+    const { app, host } = await mountSite(`#/exhibitions/${encodeURIComponent(exhibition.id)}/further-reading`)
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-link-list')).not.toBeNull(), { timeout: 20000 })
+    // Either real entries or the view's own empty state — both are the
+    // link-list shape, and the page never falls back to a hard not-found.
+    expect(host.querySelector('.mwnf-link-list__groups, .mwnf-link-list__empty')).not.toBeNull()
 
     app.unmount()
   }, 60000)

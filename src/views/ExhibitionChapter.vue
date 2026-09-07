@@ -1,402 +1,52 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
+import { EssayView } from '@metanull/viewer-layout/views'
+import { curatorJustification, exhibitionChapterSpec, partnerJustification } from '../composables/exhibitionSpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
+// The chapter page: the essay, the picture panel (with its detail
+// photographs) and previous/next crossing into the next theme all come from
+// `EssayView` itself (composables/exhibitionSpecs.js, decision D2). What the
+// default panel does not carry — the curator/partner justifications, the
+// see-also and further-reading blocks — are this site's own, in the
+// `justifications` and `after-body` slots.
+
 const route = useRoute()
-const router = useRouter()
-const {
-  itemById,
-  availableLanguages,
-  defaultLang,
-  labelOf,
-  exhibitionById,
-  exhibitionThemeById,
-  chapterById,
-  md,
-  mdInline,
-  tr,
-  loadTranslations,
-} = useInventoryData()
-
-const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params.exhibitionId)) ?? null)
-const theme = computed(() => {
-  const e = exhibition.value
-  if (!e) return null
-  return exhibitionThemeById(e.id, decodeURIComponent(route.params.themeId)) ?? null
-})
-const chapter = computed(() => {
-  const e = exhibition.value
-  const t = theme.value
-  if (!e || !t) return null
-  return chapterById(e.id, t.id, decodeURIComponent(route.params.chapterId)) ?? null
-})
-
-// Chapter position within the theme, for Previous/Next navigation (the
-// legacy site navigates chapters sequentially inside a theme).
-const chapterIndex = computed(() => {
-  const t = theme.value
-  const c = chapter.value
-  if (!t || !c) return -1
-  return t.chapters.findIndex(ch => ch.id === c.id)
-})
-
-function goToChapter(idx) {
-  const t = theme.value
-  if (!t || idx < 0 || idx >= t.chapters.length) return
-  router.push(`/exhibitions/${exhibition.value.id}/theme/${t.id}/chapter/${t.chapters[idx].id}`)
-}
-
-// ── Language selector ───────────────────────────────────────────────────
-
-const { locale } = useI18n()
-const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
-// Collection texts in the record language. They come through viewer-core by
-// name, like every other translation file: an interpolated
-// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
-// in every language of the entity eagerly.
-
-watch(activeLang, lang => {
-  loadTranslations('collections', lang)
-  loadTranslations('items', lang)
-}, { immediate: true })
-
-function collectionText(collectionId) {
-  // `tr` falls back to the English record when the active language has none,
-  // which this page needs: the site's language list is derived from the item
-  // translations, and the package's coverage per entity does not line up with
-  // it, so a language a visitor can pick may ship no collections file at all.
-  return tr('collections', collectionId, activeLang.value)
-}
-
-function resolveTitle(collectionId, fallbackName) {
-  return collectionText(collectionId).title
-    ?? tr('collections', collectionId)?.title
-    ?? fallbackName
-}
-
-// See-also / further-reading blocks live in the collection translation's
-// extra (imported from sh_exhibition_subthemenames).
-const chapterExtra = computed(() => {
-  const c = chapter.value
-  if (!c) return {}
-  return collectionText(c.id).extra ?? tr('collections', c.id)?.extra ?? {}
-})
-
-// ── Item grid with curated justifications ───────────────────────────────
-
-const selectedItemId = ref(null)
-const selectedVariantIndex = ref(0)
-
-watch(chapter, c => {
-  selectedItemId.value = c?.items?.[0]?.id ?? null
-  selectedVariantIndex.value = 0
-}, { immediate: true })
-
-const gridItems = computed(() => {
-  const c = chapter.value
-  if (!c) return []
-  return (c.items ?? [])
-    .map(entry => ({ entry, item: itemById.value.get(entry.id) }))
-    .filter(({ item }) => item)
-})
-
-const selected = computed(() => gridItems.value.find(g => g.item.id === selectedItemId.value) ?? gridItems.value[0] ?? null)
-const selectedVariants = computed(() => selected.value?.entry.details ?? [])
-
-function selectItem(itemId) {
-  selectedItemId.value = itemId
-  selectedVariantIndex.value = 0
-}
-
-function selectVariant(idx) {
-  selectedVariantIndex.value = idx
-}
-
-const selectedDisplay = computed(() => {
-  const sel = selected.value
-  if (!sel) return null
-
-  const variantIdx = selectedVariantIndex.value
-  const variant = variantIdx > 0 ? selectedVariants.value[variantIdx - 1] : null
-
-  const just = sel.entry.justifications?.[activeLang.value]
-    ?? sel.entry.justifications?.[defaultLang] ?? null
-
-  if (variant) {
-    const caption = variant.caption?.[activeLang.value] ?? variant.caption?.en ?? {}
-    return {
-      name: caption.detail_name ?? caption.name ?? '',
-      date: caption.date ?? '',
-      location: caption.location ?? '',
-      museum: caption.museum ?? '',
-      justificationCurator: caption.justification ?? just?.curator ?? '',
-      justificationPartner: just?.partner ?? '',
-      image: variant.image_url ?? sel.item.images?.[0]?.url ?? null,
-    }
-  }
-
-  const caption = sel.entry.caption?.[activeLang.value] ?? sel.entry.caption?.en ?? {}
-  const t = tr('items', sel.item.id, activeLang.value) ?? {}
-  return {
-    name: caption.name ?? t.name ?? sel.item.internal_name ?? sel.item.id,
-    date: caption.date ?? t.dates ?? '',
-    location: caption.location ?? t.location ?? '',
-    museum: caption.museum ?? (sel.item.partner_id ? labelOf('partners', sel.item.partner_id) : ''),
-    justificationCurator: just?.curator ?? caption.justification ?? '',
-    justificationPartner: just?.partner ?? '',
-    image: sel.item.images?.[0]?.url ?? null,
-  }
-})
-
-function back() {
-  if (exhibition.value && theme.value) {
-    router.push(`/exhibitions/${exhibition.value.id}/theme/${theme.value.id}`)
-  } else {
-    router.push('/exhibitions')
-  }
-}
+const chapterId = computed(() => decodeURIComponent(route.params.chapterId))
+const { t } = useI18n()
+const { md, mdInline } = useInventoryData()
 </script>
 
 <template>
-  <div v-if="!chapter" class="content-box not-found">
-    <p>{{ $t('sharinghistory.notFound.chapter') }}</p>
-    <router-link to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
-  </div>
-
-  <div v-else class="chapter-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ resolveTitle(theme.id, theme.internal_name) }}</a>
-
-    <div class="content-box">
-      <p class="chapter-crumb">
-        <span v-html="mdInline(resolveTitle(exhibition.id, exhibition.internal_name))" /> ·
-        <span v-html="mdInline(resolveTitle(theme.id, theme.internal_name))" />
+  <EssayView :spec="exhibitionChapterSpec" :id="chapterId">
+    <template #justifications="{ node, selected, language }">
+      <p v-if="curatorJustification(selected, node, language)" class="chapter-justification">
+        <span class="chapter-justification__label">{{ t('sharinghistory.exhibition.curatorJustification') }}</span>
+        <span v-html="mdInline(curatorJustification(selected, node, language))" />
       </p>
-      <h1 class="chapter-title" v-html="mdInline(resolveTitle(chapter.id, chapter.internal_name))" />
+      <p v-if="partnerJustification(selected, node, language)" class="chapter-justification">
+        <span class="chapter-justification__label">{{ t('sharinghistory.exhibition.partnerJustification') }}</span>
+        <span v-html="mdInline(partnerJustification(selected, node, language))" />
+      </p>
+    </template>
 
-      <div v-if="theme.chapters.length > 1" class="page-nav-row">
-        <button class="page-nav-btn" :disabled="chapterIndex <= 0" @click="goToChapter(chapterIndex - 1)">
-          ← {{ $t('exhibition.chapter.previous') }}
-        </button>
-        <span class="page-nav-count">{{ $t('sharinghistory.exhibition.chapter') }} {{ chapterIndex + 1 }} / {{ theme.chapters.length }}</span>
-        <button class="page-nav-btn" :disabled="chapterIndex >= theme.chapters.length - 1" @click="goToChapter(chapterIndex + 1)">
-          {{ $t('exhibition.chapter.next') }} →
-        </button>
+    <template #after-body="{ text }">
+      <div v-if="text.extra?.see_also_links" class="chapter-extra">
+        <h3 class="chapter-extra__heading">{{ t('sharinghistory.exhibition.seeAlso') }}</h3>
+        <div class="prose" v-html="md(text.extra.see_also_links)" />
       </div>
-
-      <div class="chapter-grid">
-        <!-- Left: quotation + narrative -->
-        <div class="chapter-text-col">
-          <blockquote v-if="collectionText(chapter.id).quote" class="chapter-quote" v-html="md(collectionText(chapter.id).quote)" />
-          <div v-if="collectionText(chapter.id).description" class="prose" v-html="md(collectionText(chapter.id).description)" />
-
-          <div v-if="chapterExtra.see_also_links" class="chapter-extra">
-            <h3 class="chapter-extra-heading">{{ $t('sharinghistory.exhibition.seeAlso') }}</h3>
-            <div class="prose" v-html="md(chapterExtra.see_also_links)" />
-          </div>
-          <div v-if="chapterExtra.further_reading" class="chapter-extra">
-            <h3 class="chapter-extra-heading">{{ $t('exhibition.relatedCategory.furtherReading') }}</h3>
-            <div class="prose" v-html="md(chapterExtra.further_reading)" />
-          </div>
-        </div>
-
-        <!-- Right: detail panel + thumbnail grid -->
-        <div class="chapter-side-col" v-if="gridItems.length">
-          <div v-if="selectedDisplay" class="item-detail-panel">
-            <div class="item-detail-img-wrap">
-              <img v-if="selectedDisplay.image" :src="selectedDisplay.image" :alt="selectedDisplay.name" class="item-detail-img" />
-              <div v-else class="item-detail-img-placeholder" />
-            </div>
-
-            <div v-if="selectedVariants.length" class="variant-row">
-              <button
-                class="variant-btn"
-                :class="{ active: selectedVariantIndex === 0 }"
-                :title="$t('sharinghistory.exhibition.mainView')"
-                @click="selectVariant(0)"
-              >
-                <img v-if="selected.item.images?.[0]?.url" :src="selected.item.images[0].url" :alt="$t('sharinghistory.exhibition.mainView')" />
-              </button>
-              <button
-                v-for="(variant, idx) in selectedVariants"
-                :key="idx"
-                class="variant-btn"
-                :class="{ active: selectedVariantIndex === idx + 1 }"
-                :title="$t('sharinghistory.exhibition.detailView')"
-                @click="selectVariant(idx + 1)"
-              >
-                <img v-if="variant.image_url" :src="variant.image_url" :alt="$t('sharinghistory.exhibition.detailView')" />
-              </button>
-            </div>
-
-            <h3 class="item-detail-name" v-html="mdInline(selectedDisplay.name)" />
-            <p v-if="selectedDisplay.date" class="item-detail-meta">{{ selectedDisplay.date }}</p>
-            <p v-if="selectedDisplay.location" class="item-detail-meta">{{ selectedDisplay.location }}</p>
-            <p v-if="selectedDisplay.museum" class="item-detail-meta">{{ selectedDisplay.museum }}</p>
-            <p v-if="selectedDisplay.justificationCurator" class="item-detail-justification">
-              <span class="just-label">{{ $t('sharinghistory.exhibition.curatorJustification') }}</span>
-              <span v-html="mdInline(selectedDisplay.justificationCurator)" />
-            </p>
-            <p v-if="selectedDisplay.justificationPartner" class="item-detail-justification">
-              <span class="just-label">{{ $t('sharinghistory.exhibition.partnerJustification') }}</span>
-              <span v-html="mdInline(selectedDisplay.justificationPartner)" />
-            </p>
-            <RouterLink :to="`/item/${encodeURIComponent(selected.item.id)}`" class="more-info-link">
-              More info →
-            </RouterLink>
-          </div>
-
-          <div class="thumb-grid">
-            <div
-              v-for="g in gridItems"
-              :key="g.item.id"
-              class="thumb-cell"
-              :class="{ active: g.item.id === selectedItemId }"
-              @click="selectItem(g.item.id)"
-            >
-              <img v-if="g.item.images?.length" :src="g.item.images[0].url" :alt="g.item.internal_name ?? ''" loading="lazy" />
-              <div v-else class="thumb-placeholder" />
-            </div>
-          </div>
-        </div>
+      <div v-if="text.extra?.further_reading" class="chapter-extra">
+        <h3 class="chapter-extra__heading">{{ t('exhibition.relatedCategory.furtherReading') }}</h3>
+        <div class="prose" v-html="md(text.extra.further_reading)" />
       </div>
-    </div>
-  </div>
+    </template>
+  </EssayView>
 </template>
 
 <style scoped>
-.not-found { color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 13px; }
-
-.chapter-wrap { display: flex; flex-direction: column; gap: 10px; }
-
-
-.chapter-crumb {
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-.chapter-title {
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--heading);
-  margin-bottom: 14px;
-  line-height: 1.3;
-  font-family: 'Roboto', sans-serif;
-}
-
-.page-nav-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.page-nav-btn {
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 12px;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--heading);
-  cursor: pointer;
-}
-.page-nav-btn:hover:not(:disabled) { color: var(--nav-active); border-color: var(--accent); }
-.page-nav-btn:disabled { opacity: 0.4; cursor: default; }
-.page-nav-count {
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.chapter-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-}
-@media (max-width: 700px) { .chapter-grid { grid-template-columns: 1fr; } }
-
-.chapter-text-col { min-width: 0; }
-.chapter-quote {
-  font-size: 15px;
-  font-style: italic;
-  color: var(--heading);
-  border-left: 3px solid var(--gold-band);
-  padding-left: 12px;
-  margin-bottom: 14px;
-  line-height: 1.5;
-  font-family: 'Roboto', sans-serif;
-}
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
-.prose :deep(p:last-child) { margin-bottom: 0; }
-
-.chapter-extra { margin-top: 18px; }
-.chapter-extra-heading {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--heading);
-  border-bottom: 1px solid var(--accent-soft);
-  padding-bottom: 3px;
-  margin-bottom: 6px;
-  font-family: 'Roboto', sans-serif;
-}
-
-.chapter-side-col { display: flex; flex-direction: column; gap: 14px; }
-
-.item-detail-panel {
-  border: 1px solid var(--border);
-  background: var(--section-bg);
-  padding: 14px;
-}
-.item-detail-img-wrap {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: var(--tile-bg);
-  margin-bottom: 10px;
-}
-.item-detail-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.item-detail-img-placeholder { width: 100%; height: 100%; }
-
-.variant-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-.variant-btn {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 2px solid transparent;
-  background: var(--tile-bg);
-  cursor: pointer;
-  overflow: hidden;
-}
-.variant-btn.active { border-color: var(--accent); }
-.variant-btn:hover { border-color: var(--accent-soft); }
-.variant-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-.item-detail-name {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--heading);
-  margin-bottom: 6px;
-  line-height: 1.3;
-  font-family: 'Roboto', sans-serif;
-}
-.item-detail-meta {
-  font-size: 12px;
-  color: var(--muted);
-  font-family: 'Roboto', sans-serif;
-  margin-bottom: 2px;
-}
-.item-detail-justification {
+.chapter-justification {
   font-size: 13px;
   line-height: 1.6;
   color: var(--text);
@@ -405,7 +55,7 @@ function back() {
   border-top: 1px solid var(--border);
   font-family: 'Roboto', sans-serif;
 }
-.just-label {
+.chapter-justification__label {
   display: block;
   font-size: 11px;
   font-weight: 700;
@@ -414,29 +64,18 @@ function back() {
   color: var(--accent-soft);
   margin-bottom: 2px;
 }
-.more-info-link {
-  display: inline-block;
-  margin-top: 10px;
-  font-size: 13px;
+
+.chapter-extra { margin-top: 18px; }
+.chapter-extra__heading {
+  font-size: 14px;
   font-weight: 500;
-  color: var(--nav-active);
+  color: var(--heading);
+  border-bottom: 1px solid var(--accent-soft);
+  padding-bottom: 3px;
+  margin-bottom: 6px;
   font-family: 'Roboto', sans-serif;
 }
-
-.thumb-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-.thumb-cell {
-  aspect-ratio: 1;
-  overflow: hidden;
-  border: 2px solid transparent;
-  cursor: pointer;
-  background: var(--tile-bg);
-}
-.thumb-cell.active { border-color: var(--accent); }
-.thumb-cell:hover { border-color: var(--accent-soft); }
-.thumb-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.thumb-placeholder { width: 100%; height: 100%; }
+.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
+.prose :deep(p) { margin: 0 0 .75em; }
+.prose :deep(p:last-child) { margin-bottom: 0; }
 </style>
