@@ -8,11 +8,13 @@ import { useInventoryData } from './useInventoryData.js'
 // scope rule, the date rule, the eight fields of the legacy search form (no
 // period / dynasty on this site), the two record facets of the Permanent
 // Collection, and the exhibition scope legacy's pclist_all.php offered as
-// "Theme / Subtheme / Chapter". Two entrances and two results pages read
-// this one declaration.
+// "Theme / Subtheme / Chapter", folded into the `permanentCollection` spec
+// below that viewer-layout's `CatalogueResultsView` renders directly. Two
+// entrances and one results page read this one declaration.
 
 const {
-  collections, countries, countryLabel, exhibitions, exhibitionThemes, mdStrip, partnerLabel, partners, tr,
+  collections, countries, countryLabel, exhibitions, exhibitionThemes, itemLabel, mdInline, mdStrip, partnerLabel,
+  partners, tr,
 } = useInventoryData()
 
 /** Twenty rows a page, as the legacy pages showed. */
@@ -148,4 +150,91 @@ export function itemIdsUnder(collectionId) {
 
 export function collectionById(id) {
   return (collections.value ?? []).find((c) => c.id === id) ?? null
+}
+
+// ── The Permanent Collection, as a spec ─────────────────────────────────────
+//
+// What viewer-layout's `CatalogueResultsView` renders on
+// `/permanent-collection/results`: the two facets above over every record,
+// as legacy offered them, the two years, the date rule above, chronological
+// order, twenty rows a page, and legacy's count phrased as "[N objects, M
+// monuments]". The exhibition scope is `scope`, not a facet, because it
+// narrows the record set by an id tree rather than by a value the record
+// itself carries; the cascade's own options (exhibitionOptions /
+// themeOptions / chapterOptions, above) stay out of the spec for the same
+// reason and render in the view's `filters` slot instead. Every text is an
+// entry name; the check that every name resolves reads them here.
+
+// `scope` runs once per record, and the exhibition subtree it filters
+// against does not change between those calls within one pass — only
+// `scopedItemIds` is memoised, so a full page of records costs one walk of
+// the collection tree rather than one per record.
+let scopeCache = { collections: null, id: null, ids: null }
+function scopedItemIds(id) {
+  const current = collections.value
+  if (scopeCache.collections !== current || scopeCache.id !== id) {
+    scopeCache = { collections: current, id, ids: itemIdsUnder(id) }
+  }
+  return scopeCache.ids
+}
+
+export const permanentCollection = {
+  entity: 'items',
+  keys: ['country', 'exhibition', 'theme', 'chapter', 'partner', 'begin', 'end'],
+  facets: FACETS,
+  facetScope: 'all',
+  scope: (item, filters) => {
+    if (!inScope(item)) return false
+    const scopeId = filters.chapter || filters.theme || filters.exhibition
+    return !scopeId || scopedItemIds(scopeId).has(item.id)
+  },
+  controls: [
+    { key: 'country', label: 'catalogue.facet.country', anyLabel: 'catalogue.facet.any' },
+    { key: 'partner', label: 'catalogue.facet.holdingInstitution', anyLabel: 'catalogue.facet.any' },
+    { key: 'begin', type: 'year', label: 'catalogue.facet.fromYear', placeholder: 'sharinghistory.filter.fromYearHint' },
+    { key: 'end', type: 'year', label: 'catalogue.facet.toYear', placeholder: 'sharinghistory.filter.toYearHint' },
+  ],
+  filterMode: 'apply',
+  filterTitle: 'catalogue.filter.heading',
+  dates: { mode: DATE_MODE },
+  sort: 'chronological',
+  pageSize: PAGE_SIZE,
+  variant: 'list',
+  recordRoute: 'item',
+  empty: 'catalogue.results.noResultsFilter',
+  pagination: { window: 7 },
+
+  // The row: the thumbnail, the name, the country, the date and the holder,
+  // the holder only when the package carries the partner, so a label is
+  // never an id.
+  record: (item) => {
+    const text = tr('items', item.id)
+    return {
+      id: item.id,
+      image: item.images?.[0]?.url ?? '',
+      imageAlt: itemLabel(item),
+      name: mdInline(text.name ?? item.internal_name ?? item.id),
+      meta: [
+        countryLabel(item.country_id),
+        text.dates,
+        (partners.value ?? []).some((p) => p.id === item.partner_id) ? partnerLabel(item.partner_id) : '',
+      ].filter(Boolean),
+      badge: item.type,
+      to: { name: 'item', params: { id: item.id } },
+    }
+  },
+
+  // "[N objects, M monuments]", legacy's phrasing of the count.
+  summary: ({ matching, t }) => {
+    let objects = 0
+    let monuments = 0
+    for (const item of matching) {
+      if (item.type === 'monument') monuments++
+      else objects++
+    }
+    return [
+      { label: t('catalogue.results.objectsFound'), count: objects },
+      { label: t('catalogue.results.monumentsFound'), count: monuments },
+    ]
+  },
 }
