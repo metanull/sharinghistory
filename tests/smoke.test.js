@@ -411,7 +411,7 @@ describe('website smoke test', () => {
     const expectedDate = text.date_from_description && (text.date_to_description && text.date_to_description !== text.date_from_description ? `${text.date_from_description} – ${text.date_to_description}` : text.date_from_description)
     if (expectedDate) {
       const dateCells = Array.from(host.querySelectorAll('.mwnf-timeline__date'))
-      expect(dateCells.some((el) => el.textContent.includes(expectedDate))).toBe(true)
+      expect(dateCells.some((el) => el.textContent.trim() === expectedDate)).toBe(true)
       expect(dateCells.some((el) => el.textContent.includes(text.name))).toBe(false)
     }
     const description = timelineEventTexts[event.id]?.description
