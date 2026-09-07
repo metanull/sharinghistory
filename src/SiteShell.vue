@@ -4,7 +4,7 @@
 // header slot. All other PageShell props and the update:language event pass
 // through untouched via $attrs.
 import { computed } from 'vue'
-import { useI18n } from '@metanull/viewer-core'
+import { useI18n, useSection } from '@metanull/viewer-core'
 import { PageShell } from '@metanull/viewer-layout'
 
 const { t } = useI18n()
@@ -16,16 +16,19 @@ const { t } = useI18n()
 // the offered languages — and PageShell receives these links after $attrs, so
 // they take precedence over anything the config still passes.
 // The legacy site's own top-level sections, in its own order — this site leads
-// with the exhibitions and adds the two historical sections.
+// with the exhibitions and adds the two historical sections. Which entry is
+// active is the section the route declares (`meta.section`), read through
+// viewer-core's `useSection()` — never derived from the path.
+const section = useSection()
 const navLinks = computed(() => [
-  { label: t('core.nav.home'), href: '#/' },
-  { label: t('sharinghistory.nav.exhibitions'), href: '#/exhibitions' },
-  { label: t('sharinghistory.nav.permanentCollection'), href: '#/permanent-collection' },
-  { label: t('sharinghistory.nav.database'), href: '#/database' },
-  { label: t('sharinghistory.nav.timeline'), href: '#/timeline' },
-  { label: t('sharinghistory.nav.historicalBackground'), href: '#/historical-background' },
-  { label: t('sharinghistory.nav.historicalProfiles'), href: '#/historical-profiles' },
-  { label: t('sharinghistory.nav.partners'), href: '#/partners' },
+  { label: t('core.nav.home'), href: '#/', active: section.value === 'home' },
+  { label: t('sharinghistory.nav.exhibitions'), href: '#/exhibitions', active: section.value === 'exhibitions' },
+  { label: t('sharinghistory.nav.permanentCollection'), href: '#/permanent-collection', active: section.value === 'permanent-collection' },
+  { label: t('sharinghistory.nav.database'), href: '#/database', active: section.value === 'database' },
+  { label: t('sharinghistory.nav.timeline'), href: '#/timeline', active: section.value === 'timeline' },
+  { label: t('sharinghistory.nav.historicalBackground'), href: '#/historical-background', active: section.value === 'historical-background' },
+  { label: t('sharinghistory.nav.historicalProfiles'), href: '#/historical-profiles', active: section.value === 'historical-profiles' },
+  { label: t('sharinghistory.nav.partners'), href: '#/partners', active: section.value === 'partners' },
 ])
 </script>
 
