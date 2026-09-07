@@ -167,7 +167,12 @@ function exhibitionLinksForItem(itemId) {
     const ancestry = exhibitionAncestry(node)
     if (!ancestry) continue
     const exhibition = ancestry.length === 0 ? node : ancestry[0]
-    const themeId = ancestry.length === 1 ? node.id : ancestry.length === 2 ? ancestry[1].id : null
+    // National Context collections (purpose "national-context") sit next to
+    // themes under an exhibition but link to the exhibition introduction,
+    // not to a theme page — their themeId is null (same as direct attachment).
+    const themeId = ancestry.length === 1 && node.purpose === 'national-context'
+      ? null
+      : ancestry.length === 1 ? node.id : ancestry.length === 2 ? ancestry[1].id : null
     const key = `${exhibition.id}:${themeId ?? ''}`
     if (seen.has(key)) continue
     seen.add(key)
