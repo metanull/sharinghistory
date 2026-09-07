@@ -1,189 +1,119 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
+import { EssayView } from '@metanull/viewer-layout/views'
+import { historicalProfilesTree } from '../composables/history.js'
+import { historicalBackgroundCountrySpec } from '../composables/historySpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
+
+// The essay is a page's own narrative (composables/historySpecs.js,
+// decision #39). What is the record's, not the page's — its own intro, the
+// bibliography, the historical maps — is not a field of the page's
+// translation at all, so it is this wrapper's own `before-body`/`after`
+// slot content, read off `record` directly rather than off the essay's
+// current node.
+
+const props = defineProps({
+  recordId: { type: String, required: true },
+  pageId: { type: String, default: null },
+})
 
 const route = useRoute()
 const router = useRouter()
-const {
-  historicalBackgroundRecords,
-  historicalBackgroundPages,
-  itemById,
-  labelOf,
-  availableLanguages,
-  defaultLang,
-  md,
-  mdInline,
-  tr,
-  loadTranslations,
-} = useInventoryData()
+const { t } = useI18n()
+const { labelOf, md } = useInventoryData()
 
-const record = computed(() =>
-  historicalBackgroundRecords.value.find(r => r.id === decodeURIComponent(route.params.recordId)) ?? null
-)
+const record = computed(() => historicalProfilesTree.byId.value.get(props.recordId) ?? null)
+const pages = computed(() => (record.value ? historicalProfilesTree.children(record.value.id) : []))
 
-const pages = computed(() => (record.value ? historicalBackgroundPages(record.value.id) : []))
-
-// ── Page pagination (legacy hb_result.php?country=xx&page=N) ────────────
-
-const activePageIndex = ref(0)
-
-watch([record, () => route.query.page], () => {
-  const idx = parseInt(route.query.page ?? '1', 10) - 1
-  activePageIndex.value = Number.isFinite(idx) && idx >= 0 && idx < pages.value.length ? idx : 0
-}, { immediate: true })
-
-function goToPage(idx) {
-  if (idx < 0 || idx >= pages.value.length) return
-  router.push({ query: { ...route.query, page: idx + 1 } })
-}
-
-const activePage = computed(() => pages.value[activePageIndex.value] ?? null)
-
-// ── Per-language text ───────────────────────────────────────────────────
-
-const { locale } = useI18n()
-const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
-// Collection texts in the record language. They come through viewer-core by
-// name, like every other translation file: an interpolated
-// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
-// in every language of the entity eagerly.
-
-watch(activeLang, lang => loadTranslations('collections', lang), { immediate: true })
-
-function collectionText(collectionId) {
-  return tr('collections', collectionId, activeLang.value)
-}
-
-const recordText = computed(() => (record.value ? collectionText(record.value.id) : {}))
-const pageText = computed(() => (activePage.value ? collectionText(activePage.value.id) : {}))
-
-// Bibliography lives in the record translation's extra (structured
-// bibliography injected by the importer), keyed by language. A language's
-// value can be a single Markdown string or an array of entry strings.
-const bibliography = computed(() => {
-  const extra = recordText.value.extra ?? {}
-  const bib = extra.bibliography
-  if (!bib) return null
-  const raw = bib[activeLang.value] ?? bib[defaultLang] ?? Object.values(bib)[0] ?? null
-  if (raw == null) return null
-  if (Array.isArray(raw)) return raw.filter(e => typeof e === 'string').join('\n\n')
-  return typeof raw === 'string' ? raw : null
+// A bare record address, or a bookmarked `?page=N` one (legacy's own query
+// pagination), canonicalised once onto the record's own explicit page
+// address — the address `historicalProfileNodeRoute` and every card linking
+// here already hand out directly.
+watchEffect(() => {
+  if (props.pageId || !pages.value.length) return
+  const ordinal = Number.parseInt(String(route.query.page ?? '1'), 10)
+  const index = Number.isInteger(ordinal) && ordinal >= 1 && ordinal <= pages.value.length ? ordinal - 1 : 0
+  router.replace({
+    name: 'historical-profile',
+    params: { recordId: props.recordId, pageId: pages.value[index].id },
+  })
 })
 
-// Items illustrating the active page (legacy links HB images back to
-// database items). display_status 'N' items are welcome here — this is
-// exactly what they exist for.
-const pageItems = computed(() => {
-  const p = activePage.value
-  if (!p?.items?.length) return []
-  return p.items.map(e => itemById.value.get(e.id)).filter(Boolean)
-})
+const activePageId = computed(() => props.pageId ?? pages.value[0]?.id ?? null)
+
+// The importer injects the same language-keyed bibliography map into every
+// translation's own extra, the way exhibitionSpecs.js's own
+// `bibliographyLinks` reads it for an exhibition.
+function bibliographyMarkdown(tr, language) {
+  const bib = tr('collections', record.value.id).extra?.bibliography
+  if (!bib) return ''
+  const raw = bib[language] ?? bib.en ?? Object.values(bib)[0] ?? null
+  if (raw == null) return ''
+  if (Array.isArray(raw)) return raw.filter((entry) => typeof entry === 'string').join('\n\n')
+  return typeof raw === 'string' ? raw : ''
+}
 </script>
 
 <template>
   <div v-if="!record" class="content-box not-found">
-    <p>{{ $t('sharinghistory.notFound.profile') }}</p>
-    <router-link to="/historical-profiles">← {{ $t('sharinghistory.profile.returnLink') }}</router-link>
+    <p>{{ t('sharinghistory.notFound.profile') }}</p>
+    <router-link to="/historical-profiles">← {{ t('sharinghistory.profile.returnLink') }}</router-link>
   </div>
 
-  <div v-else class="hb-wrap">
-    <router-link class="back-link" to="/historical-profiles">← {{ $t('sharinghistory.nav.historicalProfiles') }}</router-link>
+  <div v-else-if="activePageId" class="hb-wrap">
+    <router-link class="back-link" to="/historical-profiles">← {{ t('sharinghistory.nav.historicalProfiles') }}</router-link>
 
-    <div class="content-box">
-      <p v-if="record.country_id" class="hb-country-tag">{{ labelOf('countries', record.country_id) }}</p>
-      <h1 class="hb-title" v-html="mdInline(recordText.title ?? record.internal_name)" />
-      <div v-if="recordText.description" class="prose" v-html="md(recordText.description)" />
+    <EssayView :spec="historicalBackgroundCountrySpec" :id="activePageId">
+      <template #before-body="{ tr }">
+        <p v-if="record.country_id" class="hb-country-tag">{{ labelOf('countries', record.country_id) }}</p>
+        <div v-if="tr('collections', record.id).description" class="prose" v-html="md(tr('collections', record.id).description)" />
+      </template>
 
-      <div v-if="pages.length" class="page-nav-row">
-        <button class="page-nav-btn" :disabled="activePageIndex === 0" @click="goToPage(activePageIndex - 1)">
-          ← {{ $t('sharinghistory.action.previousPage') }}
-        </button>
-        <!-- Was "Page N of M". The word stays, the "of" goes: the position
-             reads as plainly beside it as it did inside the phrase, and "of"
-             alone is not a text a translator can do anything with. -->
-        <span class="page-nav-count">{{ $t('sharinghistory.exhibition.page') }} {{ activePageIndex + 1 }} / {{ pages.length }}</span>
-        <button class="page-nav-btn" :disabled="activePageIndex === pages.length - 1" @click="goToPage(activePageIndex + 1)">
-          {{ $t('sharinghistory.action.nextPage') }} →
-        </button>
-      </div>
+      <template #after-body="{ node }">
+        <div v-if="node.images?.length" class="hb-image-strip">
+          <img v-for="(img, idx) in node.images" :key="idx" :src="img.url" :alt="img.alt_text ?? ''" loading="lazy" />
+        </div>
+      </template>
 
-      <div v-if="activePage">
-        <h2 v-if="pageText.title" class="hb-page-title" v-html="mdInline(pageText.title)" />
-        <div v-if="pageText.description" class="prose" v-html="md(pageText.description)" />
-
-        <div v-if="activePage.images?.length" class="hb-image-strip">
-          <img
-            v-for="(img, idx) in activePage.images"
-            :key="idx"
-            :src="img.url"
-            :alt="img.alt_text ?? ''"
-            loading="lazy"
-          />
+      <template #after="{ tr, language }">
+        <div class="hb-related">
+          <h3 class="hb-item-heading">{{ t('sharinghistory.related.title') }}</h3>
+          <ul class="hb-related-list">
+            <li><router-link to="/historical-background">{{ t('sharinghistory.nav.historicalBackground') }}</router-link></li>
+            <li v-if="record.country_id">
+              <router-link :to="{ path: '/timeline/results', query: { country: record.country_id, exhibition: 'pc' } }">
+                {{ t('sharinghistory.related.politicalContextTimeline') }} {{ labelOf('countries', record.country_id) }}
+              </router-link>
+            </li>
+            <li v-if="bibliographyMarkdown(tr, language)"><a href="#hb-bibliography">{{ t('sharinghistory.history.bibliography') }}</a></li>
+            <li v-if="record.images?.length"><a href="#hb-maps">{{ t('sharinghistory.history.viewMaps') }}</a></li>
+          </ul>
         </div>
 
-        <div v-if="pageItems.length" class="hb-item-row">
-          <h3 class="hb-item-heading">{{ $t('sharinghistory.related.items') }}</h3>
-          <div class="hb-item-grid">
-            <RouterLink
-              v-for="item in pageItems"
-              :key="item.id"
-              :to="`/item/${encodeURIComponent(item.id)}`"
-              class="hb-item-card"
-            >
-              <img v-if="item.images?.length" :src="item.images[0].url" :alt="labelOf('items', item.id)" loading="lazy" />
-              <div v-else class="hb-item-placeholder" />
-              <span class="hb-item-name">{{ labelOf('items', item.id) }}</span>
-            </RouterLink>
+        <div v-if="record.images?.length" id="hb-maps" class="hb-maps">
+          <h3 class="hb-item-heading">{{ t('sharinghistory.history.maps') }}</h3>
+          <div class="hb-image-strip">
+            <img v-for="(img, idx) in record.images" :key="idx" :src="img.url" :alt="img.alt_text ?? ''" loading="lazy" />
           </div>
         </div>
-      </div>
 
-      <!-- Legacy hb_result.php "Related Content" box -->
-      <div class="hb-related">
-        <h3 class="hb-item-heading">{{ $t('sharinghistory.related.title') }}</h3>
-        <ul class="hb-related-list">
-          <li><RouterLink to="/historical-background">{{ $t('sharinghistory.nav.historicalBackground') }}</RouterLink></li>
-          <li v-if="record.country_id">
-            <RouterLink
-              :to="{ path: '/timeline/results', query: { country: record.country_id, exhibition: 'pc' } }"
-            >
-              {{ $t('sharinghistory.related.politicalContextTimeline') }} {{ labelOf('countries', record.country_id) }}
-            </RouterLink>
-          </li>
-          <li v-if="bibliography"><a href="#hb-bibliography">{{ $t('sharinghistory.history.bibliography') }}</a></li>
-          <li v-if="record.images?.length"><a href="#hb-maps">{{ $t('sharinghistory.history.viewMaps') }}</a></li>
-        </ul>
-      </div>
-
-      <!-- Record-level images are the legacy historical maps -->
-      <div v-if="record.images?.length" id="hb-maps" class="hb-maps">
-        <h3 class="hb-item-heading">{{ $t('sharinghistory.history.maps') }}</h3>
-        <div class="hb-image-strip">
-          <img
-            v-for="(img, idx) in record.images"
-            :key="idx"
-            :src="img.url"
-            :alt="img.alt_text ?? 'Historical map'"
-            loading="lazy"
-          />
+        <div v-if="bibliographyMarkdown(tr, language)" id="hb-bibliography" class="hb-bibliography">
+          <h3 class="hb-item-heading">{{ t('sharinghistory.history.bibliography') }}</h3>
+          <div class="prose" v-html="md(bibliographyMarkdown(tr, language))" />
         </div>
-      </div>
-
-      <div v-if="bibliography" id="hb-bibliography" class="hb-bibliography">
-        <h3 class="hb-item-heading">{{ $t('sharinghistory.history.bibliography') }}</h3>
-        <div class="prose" v-html="md(bibliography)" />
-      </div>
-    </div>
+      </template>
+    </EssayView>
   </div>
+
+  <p v-else class="mwnf-essay__status">{{ t('core.status.loading') }}</p>
 </template>
 
 <style scoped>
 .not-found { color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 13px; }
 
 .hb-wrap { display: flex; flex-direction: column; gap: 10px; }
-
 
 .hb-country-tag {
   display: inline-block;
@@ -196,20 +126,6 @@ const pageItems = computed(() => {
   background: var(--accent);
   padding: 2px 8px;
   margin-bottom: 8px;
-}
-.hb-title {
-  font-size: 22px;
-  font-weight: 400;
-  color: var(--heading);
-  margin-bottom: 12px;
-  font-family: 'Roboto', sans-serif;
-}
-.hb-page-title {
-  font-size: 17px;
-  font-weight: 500;
-  color: var(--heading);
-  margin: 6px 0 10px;
-  font-family: 'Roboto', sans-serif;
 }
 
 .prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
@@ -227,30 +143,6 @@ const pageItems = computed(() => {
   background: var(--tile-bg);
 }
 
-.page-nav-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin: 16px 0;
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-.page-nav-btn {
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 12px;
-  background: none;
-  border: 1px solid var(--border);
-  color: var(--heading);
-  cursor: pointer;
-}
-.page-nav-btn:hover:not(:disabled) { color: var(--nav-active); border-color: var(--accent); }
-.page-nav-btn:disabled { opacity: 0.4; cursor: default; }
-.page-nav-count { font-family: 'Roboto', sans-serif; font-size: 12px; color: var(--muted); }
-
-.hb-item-row { margin-top: 18px; }
 .hb-item-heading {
   font-size: 14px;
   font-weight: 500;
@@ -259,27 +151,6 @@ const pageItems = computed(() => {
   padding-bottom: 3px;
   margin-bottom: 8px;
   font-family: 'Roboto', sans-serif;
-}
-.hb-item-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 10px;
-}
-.hb-item-card { display: flex; flex-direction: column; gap: 4px; text-decoration: none !important; }
-.hb-item-card:hover .hb-item-name { color: var(--nav-active); }
-.hb-item-card img, .hb-item-placeholder {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border: 1px solid var(--border);
-  background: var(--tile-bg);
-  display: block;
-}
-.hb-item-name {
-  font-family: 'Roboto', sans-serif;
-  font-size: 11px;
-  color: var(--text);
-  line-height: 1.3;
 }
 
 .hb-bibliography { margin-top: 18px; }

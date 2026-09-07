@@ -6,6 +6,7 @@ import ownTexts from '../locales/en.json'
 import { itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { exhibitionTree } from '../src/composables/exhibitions.js'
+import { historicalProfilesTree } from '../src/composables/history.js'
 import { OFFERED_LANGUAGES } from '../src/languages.js'
 import { useInventoryData } from '../src/composables/useInventoryData.js'
 
@@ -171,6 +172,61 @@ describe('website smoke test', () => {
     const nextLink = host.querySelector('.mwnf-essay__nav-link--next')
     expect(nextLink).not.toBeNull()
     expect(decodeURIComponent(nextLink.getAttribute('href'))).toContain(fixture.nextTheme.id)
+
+    app.unmount()
+  }, 60000)
+
+  // The Historical Background/Profiles pages, and the country page, run on
+  // `useCollectionTree` (composables/history.js) and `EssayView`
+  // (composables/historySpecs.js) — #39, following the exhibition tree's own
+  // move in #37/#38.
+  it('renders the Historical Background page as its own wrapper, over both subtrees', async () => {
+    const { app, host } = await mountSite('#/historical-background')
+    await vi.waitFor(() => expect(host.querySelector('.perspective-tabs')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.topic-list')).not.toBeNull()
+    expect(host.querySelector('.insight-table')).not.toBeNull()
+    app.unmount()
+  }, 60000)
+
+  it('renders the Historical Profiles list on SectionCards', async () => {
+    const { app, host } = await mountSite('#/historical-profiles')
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-cards__card')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-cards--covers')).not.toBeNull()
+    app.unmount()
+  }, 60000)
+
+  // A country whose record carries more than one page, to prove the
+  // `navigation: 'siblings'` crossing that replaces the old `?page=N` query.
+  function findProfileWithPages() {
+    const root = historicalProfilesTree.root.value
+    if (!root) return null
+    for (const record of historicalProfilesTree.children(root.id)) {
+      if (!record.country_id) continue
+      const pages = historicalProfilesTree.children(record.id)
+      if (pages.length > 1) return { record, pages }
+    }
+    return null
+  }
+
+  it('renders the country page on EssayView, canonicalising the bare record address onto its first page', async () => {
+    await loadEntities(['collections'])
+    const fixture = findProfileWithPages()
+    expect(fixture, 'fixture: a country record with more than one page').not.toBeNull()
+
+    const { app, host } = await mountSite(`#/historical-profiles/${encodeURIComponent(fixture.record.id)}`)
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
+
+    // The redirect (`router.replace`) lands on the record's own first page,
+    // not a bare address — asserted once it settles, separately from the
+    // essay itself, which renders off the same fallback immediately.
+    await vi.waitFor(
+      () => expect(decodeURIComponent(window.location.hash)).toContain(fixture.pages[0].id),
+      { timeout: 20000 },
+    )
+    expect(decodeURIComponent(window.location.hash)).toContain(fixture.record.id)
+    expect(host.querySelector('.mwnf-essay__breadcrumb-link')).not.toBeNull()
+    expect(host.querySelector('.mwnf-essay__breadcrumb-link').textContent).not.toBe('')
+    expect(host.querySelector('.mwnf-essay__nav-link--next')).not.toBeNull()
 
     app.unmount()
   }, 60000)
