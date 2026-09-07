@@ -1,143 +1,21 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { I18nText, useI18n } from '@metanull/viewer-core'
-import { useInventoryData } from '../composables/useInventoryData.js'
+import { I18nText } from '@metanull/viewer-core'
+import { TimelineResultsView } from '@metanull/viewer-layout/views'
+import { timelineEntrance } from '../composables/timeline.js'
 
-const router = useRouter()
-const { t } = useI18n()
-const {
-  timelines,
-  timelineEvents,
-  labelOf,
-  exhibitions,
-  tr,
-} = useInventoryData()
-
-// Countries available in the timeline data (SH: one timeline per
-// country × exhibition — collapse to distinct countries here)
-const availableCountries = computed(() => {
-  const seen = new Map()
-  for (const t of timelines.value) {
-    if (t.country_id && !seen.has(t.country_id)) {
-      seen.set(t.country_id, { id: t.country_id, name: labelOf('countries', t.country_id) })
-    }
-  }
-  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
-})
-
-// Exhibitions that actually have a timeline bound to them (thematic
-// timelines). The legacy page offers a thematic-vs-Permanent-Collection
-// toggle: "pc" selects the timelines the exporter remapped to
-// collection_id null (legacy hidden sentinel exhibition 2).
-const availableExhibitions = computed(() => {
-  const boundIds = new Set(timelines.value.map(t => t.collection_id).filter(Boolean))
-  return exhibitions.value
-    .filter(e => boundIds.has(e.id))
-    .map(e => ({ id: e.id, name: tr('collections', e.id)?.title ?? e.internal_name }))
-})
-
-// Century marks spanning the actual event data, mirroring the legacy
-// hcr_home.php generation (100-year increments from min to max year_from/year_to).
-const centuryMarks = computed(() => {
-  const years = timelineEvents.value.flatMap(e => {
-    const arr = [e.year_from]
-    if (e.year_to && e.year_to !== 0) arr.push(e.year_to)
-    return arr
-  }).filter(y => y != null)
-  if (!years.length) return []
-  const min = Math.floor(Math.min(...years) / 100) * 100
-  const max = Math.ceil(Math.max(...years) / 100) * 100
-  const marks = []
-  for (let y = min; y <= max; y += 100) marks.push(y)
-  return marks
-})
-
-const selectedCountry = ref('')
-const selectedExhibition = ref('pc') // 'pc' = Permanent Collection timeline (legacy default toggle)
-const selectedBegin = ref('')
-const selectedEnd = ref('')
-const errorMessage = ref('')
-
-function search() {
-  errorMessage.value = ''
-
-  if (!selectedCountry.value && !(selectedBegin.value && selectedEnd.value)) {
-    errorMessage.value = t('timeline.form.errorSelect')
-    return
-  }
-  if (selectedBegin.value && selectedEnd.value && Number(selectedBegin.value) >= Number(selectedEnd.value)) {
-    errorMessage.value = t('timeline.form.errorPeriod')
-    return
-  }
-
-  const q = {}
-  if (selectedCountry.value && selectedCountry.value !== 'all') q.country = selectedCountry.value
-  if (selectedExhibition.value) q.exhibition = selectedExhibition.value
-  if (selectedBegin.value) q.begin = selectedBegin.value
-  if (selectedEnd.value) q.end = selectedEnd.value
-  router.push({ path: '/timeline/results', query: q })
-}
+// The timeline entrance is the platform's composed `TimelineResultsView`,
+// `entrance: true`, rendering the spec in composables/timeline.js. What
+// fills its `#before` slot is this website's own: the heading and the intro
+// paragraph legacy's hcr_home.php printed above the form.
 </script>
 
 <template>
-  <div>
-    <h1 class="section-heading">{{ $t('sharinghistory.nav.timeline') }}</h1>
-
-    <div class="content-box">
+  <TimelineResultsView :spec="timelineEntrance" class="timeline-entrance">
+    <template #before>
+      <h1 class="section-heading">{{ $t('sharinghistory.nav.timeline') }}</h1>
       <I18nText tag="p" class="intro-text" keypath="sharinghistory.timeline.intro" />
-
-      <table class="form-table filter-table">
-        <tbody>
-          <tr>
-            <th><label for="tl-country">{{ $t('sharinghistory.filter.country') }}</label></th>
-            <td>
-              <select id="tl-country" v-model="selectedCountry" style="width:280px">
-                <option value="" disabled>{{ $t('timeline.form.selectCountry') }}</option>
-                <option value="all">{{ $t('timeline.form.allCountries') }}</option>
-                <option v-for="c in availableCountries" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th><label for="tl-exh">{{ $t('sharinghistory.nav.timeline') }}</label></th>
-            <td>
-              <select id="tl-exh" v-model="selectedExhibition" style="width:280px">
-                <option value="pc">{{ $t('sharinghistory.nav.permanentCollection') }}</option>
-                <option value="">{{ $t('sharinghistory.timeline.allThematic') }}</option>
-                <option v-for="e in availableExhibitions" :key="e.id" :value="e.id">{{ e.name }}</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th><label for="tl-begin">{{ $t('timeline.form.startDate') }}</label></th>
-            <td>
-              <select id="tl-begin" v-model="selectedBegin" style="width:160px">
-                <option value="">{{ $t('timeline.form.none') }}</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('timeline.form.yearSuffix') }}</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th><label for="tl-end">{{ $t('timeline.form.endDate') }}</label></th>
-            <td>
-              <select id="tl-end" v-model="selectedEnd" style="width:160px">
-                <option value="">{{ $t('timeline.form.none') }}</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('timeline.form.yearSuffix') }}</option>
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <th></th>
-            <td style="padding-top:12px">
-              <button class="btn" @click="search">{{ $t('sharinghistory.action.go') }}</button>
-              <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+    </template>
+  </TimelineResultsView>
 </template>
 
 <style scoped>
@@ -149,21 +27,9 @@ function search() {
   font-family: 'Roboto', sans-serif;
 }
 
-.filter-table th {
-  text-align: left;
-  font-weight: normal;
-  padding: 6px 16px 6px 0;
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-  color: var(--text);
-  vertical-align: middle;
-  width: auto;
-}
-
-.error-message {
-  margin-left: 12px;
-  font-size: 12px;
-  color: var(--nav-active);
-  font-family: 'Roboto', sans-serif;
+.timeline-entrance {
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  padding: 20px;
 }
 </style>

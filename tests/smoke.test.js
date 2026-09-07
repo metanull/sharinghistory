@@ -5,6 +5,7 @@ import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
 import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
 import countryTexts from '@metanull/sharinghistory-data/translations/countries.en.json'
+import timelineEventTexts from '@metanull/sharinghistory-data/translations/timeline_events.en.json'
 import { collectionTitle, itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { exhibitionTree } from '../src/composables/exhibitions.js'
@@ -370,11 +371,100 @@ describe('website smoke test', () => {
     app.unmount()
   }, 60000)
 
+  // The timeline results run on the platform's composed `TimelineResultsView`
+  // (composables/timeline.js): the merge, the overlap rule and the era label
+  // are viewer-core's `useTimelineEvents`; what is asserted here is this
+  // website's own — the "Country | Theme" row caption (Decision, #40), the
+  // linked item's media strip, and the "See gallery" cross-link (D1) — all
+  // against real fixture text, not just element presence.
+  it('renders the timeline results on the composed view, with the "Country | Theme" caption and the media strip', async () => {
+    const [timelines, timelineEvents] = await loadEntities(['timelines', 'timeline_events'])
+    let fixture = null
+    for (const timeline of timelines.filter((t) => t.collection_id)) {
+      const event = timelineEvents.find((e) => e.timeline_id === timeline.id && e.item_ids?.length)
+      if (event) { fixture = { timeline, event }; break }
+    }
+    expect(fixture, 'fixture: a thematic timeline event with a linked item').not.toBeNull()
+    const { timeline, event } = fixture
+
+    const countryName = countryTexts[timeline.country_id]?.name
+    const themeTitle = collectionTexts[timeline.collection_id]?.title
+    expect(countryName, 'fixture: the timeline\'s country has an English name').toBeTruthy()
+    expect(themeTitle, 'fixture: the timeline\'s exhibition has an English title').toBeTruthy()
+
+    const { app, host } = await mountSite(
+      `#/timeline/results?country=${encodeURIComponent(timeline.country_id)}&collection=${encodeURIComponent(timeline.collection_id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-timeline__row')).not.toBeNull(), { timeout: 20000 })
+
+    // The heading names the filtered country.
+    expect(host.querySelector('.section-heading').textContent).toContain(countryName)
+
+    // The row's own caption: "Country | Theme".
+    const captions = Array.from(host.querySelectorAll('.mwnf-timeline__caption')).map((el) => el.textContent)
+    expect(captions.some((c) => c.includes(countryName) && c.includes(themeTitle))).toBe(true)
+
+    // The event's own date cell and description, read straight off the fixture.
+    const expectedDate = timelineEventTexts[event.id]?.name
+    if (expectedDate) {
+      expect(Array.from(host.querySelectorAll('.mwnf-timeline__date')).some((el) => el.textContent.includes(expectedDate))).toBe(true)
+    }
+    const description = timelineEventTexts[event.id]?.description
+    if (description) {
+      const snippet = description.slice(0, 30)
+      expect(Array.from(host.querySelectorAll('.mwnf-timeline__description')).some((el) => el.textContent.includes(snippet))).toBe(true)
+    }
+
+    // The linked item's media strip, with the "See Database Entry" line.
+    expect(host.querySelector('.mwnf-timeline__media-item')).not.toBeNull()
+    expect(host.textContent).toContain('See Database Entry')
+
+    // The "View items from this period" action, into the Permanent Collection results.
+    const actionLink = host.querySelector('.mwnf-timeline__action')
+    expect(actionLink).not.toBeNull()
+    expect(actionLink.textContent).toContain('View items from this period')
+
+    // Decision D1: the "See gallery" cross-link, offered because this country has objects.
+    const galleryLink = host.querySelector('.mwnf-timeline__gallery')
+    expect(galleryLink).not.toBeNull()
+    expect(galleryLink.textContent).toContain('See Gallery')
+
+    app.unmount()
+  }, 60000)
+
+  // Decision D1: the legacy `hcr_gallery.php` gallery of Permanent Collection
+  // objects, regained as `/timeline/gallery` on the composed
+  // `CatalogueResultsView` (composables/timeline.js), scoped to a country.
+  it('renders the timeline gallery on the composed results view, scoped to a country', async () => {
+    const [items] = await loadEntities(['items'])
+    const visible = items.filter((i) => i.display_status !== 'N')
+    const countryId = visible[0].country_id
+    const countryName = countryTexts[countryId]?.name
+    expect(countryName, 'fixture: the item\'s country has an English name').toBeTruthy()
+
+    const { app, host } = await mountSite(`#/timeline/gallery?country=${encodeURIComponent(countryId)}`)
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
+
+    expect(host.querySelector('.section-heading').textContent).toContain(countryName)
+    // Legacy's count, in its two halves ("N objects", "M monuments").
+    expect(host.querySelectorAll('.mwnf-summary__count').length).toBe(2)
+
+    // Every row rendered belongs to the filtered country's own items.
+    const rowIds = Array.from(host.querySelectorAll('.mwnf-list__row .mwnf-list__link')).map((a) =>
+      decodeURIComponent(a.getAttribute('href').split('/').pop()),
+    )
+    expect(rowIds.length).toBeGreaterThan(0)
+    const visibleIds = new Set(visible.filter((i) => i.country_id === countryId).map((i) => i.id))
+    for (const id of rowIds) expect(visibleIds.has(id)).toBe(true)
+
+    app.unmount()
+  }, 60000)
+
   it('declares every route by name, and leaves the catch-all to the router', () => {
     const names = config.extraViews.map((r) => r.name)
     for (const name of [
       'home', 'permanent-collection', 'permanent-collection-results', 'database',
-      'database-results', 'timeline', 'timeline-results', 'partners', 'partners-results',
+      'database-results', 'timeline', 'timeline-results', 'timeline-gallery', 'partners', 'partners-results',
       'partner', 'exhibitions', 'exhibition', 'exhibition-introduction',
       'exhibition-further-reading', 'exhibition-theme', 'exhibition-chapter',
       'historical-background', 'historical-profiles', 'historical-profile', 'item',

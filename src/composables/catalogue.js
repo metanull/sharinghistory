@@ -172,6 +172,22 @@ function scopedItemIds(id) {
   return scopeCache.ids
 }
 
+// "[N objects, M monuments]", legacy's phrasing of the count — shared by
+// every results page over `items` (the Permanent Collection, the timeline
+// gallery), since the type split is the entity's own, not one page's.
+export function objectsAndMonumentsSummary({ matching, t }) {
+  let objects = 0
+  let monuments = 0
+  for (const item of matching) {
+    if (item.type === 'monument') monuments++
+    else objects++
+  }
+  return [
+    { label: t('catalogue.results.objectsFound'), count: objects },
+    { label: t('catalogue.results.monumentsFound'), count: monuments },
+  ]
+}
+
 export const permanentCollection = {
   entity: 'items',
   keys: ['country', 'exhibition', 'theme', 'chapter', 'partner', 'begin', 'end'],
@@ -218,17 +234,5 @@ export const permanentCollection = {
     }
   },
 
-  // "[N objects, M monuments]", legacy's phrasing of the count.
-  summary: ({ matching, t }) => {
-    let objects = 0
-    let monuments = 0
-    for (const item of matching) {
-      if (item.type === 'monument') monuments++
-      else objects++
-    }
-    return [
-      { label: t('catalogue.results.objectsFound'), count: objects },
-      { label: t('catalogue.results.monumentsFound'), count: monuments },
-    ]
-  },
+  summary: objectsAndMonumentsSummary,
 }

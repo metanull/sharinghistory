@@ -15,7 +15,6 @@
   "sharinghistory.exhibition.selectPrompt": "Select an exhibition below to explore its themes, monuments, and objects.",
   "sharinghistory.filter.all": "— all —",
   "sharinghistory.filter.chapter": "Chapter",
-  "sharinghistory.filter.country": "Country",
   "sharinghistory.filter.endDateHint": "e.g. 1200",
   "sharinghistory.filter.selectTheme": "— select a theme —",
   "sharinghistory.filter.subtheme": "Subtheme",
@@ -65,7 +64,6 @@
   "sharinghistory.results.otherCountry": "Other",
   "sharinghistory.results.partnersFound": "Partners found",
   "sharinghistory.sheet.author": "Author",
-  "sharinghistory.timeline.allThematic": "— All thematic timelines —",
   "sharinghistory.timeline.intro": "Explore historical events of the period 1815 – 1918. Select a country and/or a time period, choose the Permanent Collection timeline or one of the thematic exhibition timelines, then click **Go**.",
   "sharinghistory.timeline.politicalContext": "Political Context"
 }
