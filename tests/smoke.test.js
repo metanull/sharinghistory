@@ -407,16 +407,12 @@ describe('website smoke test', () => {
     expect(captions.some((c) => c.includes(countryName) && c.includes(themeTitle))).toBe(true)
 
     // The event's own date cell and description, read straight off the fixture.
-    // The date cell accepts either the date pair (viewer-core 1.12.2+) or the
-    // title (1.12.1) during the adoption window; metanull/sharinghistory#59 pins
-    // 1.12.2 and tightens this to the date alone once viewer-core#83 ships.
     const text = timelineEventTexts[event.id]
-    const dateLabels = [
-      text.date_from_description && (text.date_to_description && text.date_to_description !== text.date_from_description ? `${text.date_from_description} – ${text.date_to_description}` : text.date_from_description),
-      text.name,
-    ].filter(Boolean)
-    if (dateLabels.length) {
-      expect(Array.from(host.querySelectorAll('.mwnf-timeline__date')).some((el) => dateLabels.some((label) => el.textContent.includes(label)))).toBe(true)
+    const expectedDate = text.date_from_description && (text.date_to_description && text.date_to_description !== text.date_from_description ? `${text.date_from_description} – ${text.date_to_description}` : text.date_from_description)
+    if (expectedDate) {
+      const dateCells = Array.from(host.querySelectorAll('.mwnf-timeline__date'))
+      expect(dateCells.some((el) => el.textContent.includes(expectedDate))).toBe(true)
+      expect(dateCells.some((el) => el.textContent.includes(text.name))).toBe(false)
     }
     const description = timelineEventTexts[event.id]?.description
     if (description) {

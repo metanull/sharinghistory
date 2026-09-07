@@ -1,4 +1,3 @@
-import { unref } from 'vue'
 import { eventDateLabel, inDateRange } from '@metanull/viewer-core'
 import { collectionTitle, DATE_MODE, inScope, itemSummary, objectsAndMonumentsSummary } from './catalogue.js'
 import { useInventoryData } from './useInventoryData.js'
@@ -90,20 +89,13 @@ const timelineResultsBase = {
   empty: 'timeline.results.noEvents',
   pageSize: 15,
   pagination: { window: 7 },
-  // `unref`: the view's own row mapper (`events`/`H`, viewer-layout#…) hands
-  // this the raw `computed()` rather than its value — every other callback
-  // of this spec receives the unwrapped context correctly, only this one
-  // doesn't, so it is unwrapped defensively here rather than trusting it.
-  event: (event, rawCtx) => {
-    const ctx = unref(rawCtx)
-    return {
-      date: eventDateLabel(event, event.text, ctx.t),
-      caption: eventCaption(event, ctx),
-      description: event.text?.description ? md(event.text.description) : '',
-      media: eventMedia(event, ctx),
-      actions: [{ label: ctx.t('timeline.action.viewItemsFromPeriod'), to: itemsLink(event) }],
-    }
-  },
+  event: (event, ctx) => ({
+    date: eventDateLabel(event, event.text, ctx.t),
+    caption: eventCaption(event, ctx),
+    description: event.text?.description ? md(event.text.description) : '',
+    media: eventMedia(event, ctx),
+    actions: [{ label: ctx.t('timeline.action.viewItemsFromPeriod'), to: itemsLink(event) }],
+  }),
   gallery: {
     route: 'timeline-gallery',
     label: 'timeline.nav.seeGallery',
