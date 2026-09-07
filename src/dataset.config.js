@@ -102,6 +102,15 @@ export default {
       meta: meta('timeline', 'timelines', 'timeline_events', 'countries', 'collections', 'items'),
     },
     {
+      // Decision D1: the legacy hcr_gallery.php gallery of Permanent
+      // Collection objects for one country and period, reached from the
+      // timeline results' "See gallery" cross-link.
+      path: '/timeline/gallery',
+      name: 'timeline-gallery',
+      component: () => import('./views/TimelineGallery.vue'),
+      meta: meta('timeline', 'items', 'countries'),
+    },
+    {
       path: '/partners',
       name: 'partners',
       component: () => import('./views/PartnersEntrance.vue'),

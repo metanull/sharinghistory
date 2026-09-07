@@ -1,15 +1,16 @@
 <script setup>
 import { useI18n } from '@metanull/viewer-core'
 import { BackLink } from '@metanull/viewer-layout/content'
-import { TimelineResultsView } from '@metanull/viewer-layout/views'
-import { timelineResults } from '../composables/timeline.js'
+import { CatalogueResultsView } from '@metanull/viewer-layout/views'
+import { timelineGallery } from '../composables/timeline.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
-// The timeline results are the platform's composed `TimelineResultsView`,
-// rendering the spec in composables/timeline.js. What fills the `#before`
-// slot is this website's own: the heading, with the active country/period
-// filter as a suffix, the way every other results page on this site prints
-// it (DatabaseResults.vue, PcList.vue).
+// Decision D1: the timeline gallery of objects legacy's hcr_gallery.php
+// offered, regained as the platform's composed `CatalogueResultsView` over
+// the spec in composables/timeline.js — scoped to the country and period a
+// timeline event's own "See gallery" cross-link is reached from. What fills
+// the `#before` slot is this website's own: the heading, with that country
+// and period as a suffix.
 
 const { t } = useI18n()
 const { labelOf } = useInventoryData()
@@ -24,32 +25,23 @@ function activeFilterLabel(filters) {
 </script>
 
 <template>
-  <TimelineResultsView :spec="timelineResults" class="timeline-results">
+  <CatalogueResultsView :spec="timelineGallery" class="timeline-gallery">
     <template #before="{ filters }">
-      <BackLink label="timeline.nav.backLink" :to="{ name: 'timeline' }" />
+      <BackLink label="timeline.nav.backToEvents" :to="{ name: 'timeline-results', query: filters }" />
       <h1 class="section-heading">
-        {{ $t('sharinghistory.nav.timeline') }}
+        {{ $t('timeline.results.galleryHeading') }}
         <span v-if="activeFilterLabel(filters)" class="heading-filter"> — {{ activeFilterLabel(filters) }}</span>
       </h1>
     </template>
-  </TimelineResultsView>
+  </CatalogueResultsView>
 </template>
 
 <style scoped>
 .heading-filter { font-weight: normal; font-size: 14px; color: var(--muted); }
 
-.timeline-results {
+.timeline-gallery {
   background: var(--content-bg);
   border: 1px solid var(--border);
   padding: 20px;
-}
-.timeline-results :deep(.mwnf-timeline__filters) { margin-bottom: 16px; }
-
-.timeline-results :deep(.mwnf-timeline__media-item) { max-width: 320px; }
-.timeline-results :deep(.sh-timeline-see) {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--nav-active);
-  display: block;
 }
 </style>
