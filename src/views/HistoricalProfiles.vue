@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { I18nText } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const {
@@ -24,10 +25,7 @@ function profileTitle(record) {
 <template>
   <div class="content-box">
     <h1 class="section-heading">{{ $t('sharinghistory.nav.historicalProfiles') }}</h1>
-    <p class="hb-intro-note">
-      Each profile presents the period 1815 – 1918 from the perspective of the
-      country concerned, illustrated with items from the database.
-    </p>
+    <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.profile.intro" />
     <div class="hb-country-grid">
       <RouterLink
         v-for="record in profiles"

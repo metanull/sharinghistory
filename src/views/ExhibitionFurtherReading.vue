@@ -69,11 +69,11 @@ function back() {
 <template>
   <div v-if="!exhibition" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
-    <router-link to="/exhibitions">← Return to Exhibitions</router-link>
+    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
   </div>
 
   <div v-else class="reading-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← Back to {{ text.title ?? exhibition.internal_name }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ text.title ?? exhibition.internal_name }}</a>
 
     <div class="content-box">
       <h1 class="reading-title">{{ $t('sharinghistory.exhibition.furtherReadingHeading') }}</h1>

@@ -50,6 +50,14 @@ const viewItemsLabel = computed(() =>
     : t('sharinghistory.action.viewObjects')
 )
 
+// partner.type is a fixed enum (museum / institution); each value maps to
+// its own text entry rather than being printed as-is.
+const partnerTypeLabel = computed(() =>
+  partner.value?.type === 'institution'
+    ? t('sharinghistory.partner.typeInstitution')
+    : t('sharinghistory.partner.typeMuseum')
+)
+
 function viewItemsLink() {
   return { path: '/permanent-collection/results', query: { partner: partner.value.id } }
 }
@@ -108,7 +116,7 @@ function back() {
     <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.partner.backLink') }}</a>
 
     <div class="detail content-box">
-      <div class="detail-type-badge">{{ partner.type }}</div>
+      <div class="detail-type-badge">{{ partnerTypeLabel }}</div>
 
       <h1 class="detail-title" v-html="mdInline(text.name ?? partner.id)" />
       <h2 v-if="text.city || partner.country_id" class="detail-subtitle">

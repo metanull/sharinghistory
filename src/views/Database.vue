@@ -18,7 +18,7 @@ const fieldOptions = useSearchFields()
 // translations carry, not the site interface languages — restricting a
 // search to a language the records were never written in returns nothing,
 // and a visitor cannot tell that apart from a genuinely empty result.
-const searchLanguages = computed(() => availableLanguages('items'))
+const searchLanguages = computed(() => availableLanguages('items').slice().sort())
 
 // Legacy's fixed century-boundary date dropdowns (database.php:88-124).
 // "From" runs 501-2001 (16 values), "to" runs 600-2000 (15 values) — not symmetric.

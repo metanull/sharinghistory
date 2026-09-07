@@ -86,11 +86,11 @@ const pageItems = computed(() => {
 <template>
   <div v-if="!record" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.profile') }}</p>
-    <router-link to="/historical-profiles">← Return to Historical Profiles</router-link>
+    <router-link to="/historical-profiles">← {{ $t('sharinghistory.profile.returnLink') }}</router-link>
   </div>
 
   <div v-else class="hb-wrap">
-    <router-link class="back-link" to="/historical-profiles">← Historical Profiles</router-link>
+    <router-link class="back-link" to="/historical-profiles">← {{ $t('sharinghistory.nav.historicalProfiles') }}</router-link>
 
     <div class="content-box">
       <p v-if="record.country_id" class="hb-country-tag">{{ countryLabel(record.country_id) }}</p>
