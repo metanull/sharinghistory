@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useI18n } from '@metanull/viewer-core'
+import { centuryPresets, useI18n } from '@metanull/viewer-core'
 import { exhibitionTree } from './exhibitions.js'
 import { useInventoryData } from './useInventoryData.js'
 
@@ -37,10 +37,15 @@ export const inScope = itemVisible
 // What each searches is the legacy form's, field for field. `text` is the
 // record's translation in the search language, with English behind it.
 
+// `keyword` and `location` also carry `item.country_id`: legacy's own rule
+// for these two fields (`database_results.php`'s keyword/location country
+// match) — Decision D3's `countryExpansion` turns a typed country name into
+// its id, and a field only benefits from that when its own haystack has the
+// id to match against.
 export const SEARCH_FIELDS = {
-  keyword: (item, text) => [text.name ?? item.internal_name, text.alternate_name, text.description, ...(item.tags ?? [])],
+  keyword: (item, text) => [text.name ?? item.internal_name, text.alternate_name, text.description, item.country_id, ...(item.tags ?? [])],
   name: (item, text) => text.name ?? item.internal_name,
-  location: (item, text) => text.location,
+  location: (item, text) => [text.location, item.country_id],
   provenance: (item, text) => text.provenance,
   patron: (item, text) => text.patrons ?? text.initial_owner,
   artist: (item, text) => [...(item.artist_names ?? []), text.architects],
@@ -53,9 +58,29 @@ export const SEARCH_FIELDS = {
 }
 
 /**
- * The field options of the search form, in legacy's order. `value` is the
- * query parameter and never a text; each label is written out, because the
- * check that every name resolves can only see the ones it can read.
+ * The field options of the search form, in legacy's order — `key`/`label`,
+ * `SearchFormView`'s own shape: a label here is an entry name, resolved by
+ * the view itself, so every one is written out as a literal (the check that
+ * a name is spelled out where it is used reads an array literal the same
+ * way it reads a template, but not a value built from one).
+ */
+export const SEARCH_FIELD_OPTIONS = [
+  { key: 'keyword', label: 'catalogue.field.keywords' },
+  { key: 'name', label: 'sheet.field.name' },
+  { key: 'location', label: 'sheet.field.location' },
+  { key: 'provenance', label: 'sheet.field.provenance' },
+  { key: 'patron', label: 'catalogue.field.patron' },
+  { key: 'artist', label: 'catalogue.field.artist' },
+  { key: 'material', label: 'catalogue.field.material' },
+  { key: 'other', label: 'catalogue.field.other' },
+]
+
+/**
+ * The field options, resolved — `value`/`label` (as opposed to
+ * `SEARCH_FIELD_OPTIONS`'s `key`/entry-name), for a caller that renders the
+ * text itself rather than handing an entry name to a view (the results
+ * page's own refine row). Every `t(...)` call is a literal for the same
+ * reason `SEARCH_FIELD_OPTIONS` is spelled out rather than built from it.
  */
 export function useSearchFields() {
   const { t } = useI18n()
@@ -253,4 +278,104 @@ export const permanentCollection = {
   },
 
   summary: objectsAndMonumentsSummary,
+}
+
+// ── The search entrance and the keyword results ────────────────────────────
+//
+// `Database.vue`'s `SearchFormView` spec (legacy database.php's shape,
+// decision D2: three keyword rows, the century date boundaries, the search
+// language) and `DatabaseResults.vue`'s `CatalogueResultsView` spec. The
+// keyword search itself — `useKeywordIndex`, tied to the results page's own
+// route-read search language — stays in the view: a keyword index is a
+// live composable, not a plain declaration, so only the pieces that are
+// (the field grammar in `SEARCH_FIELDS` above, the row-building `searchRows`
+// and `searchSummary` below, shared so the summary line and the index read
+// the very same rows) live here.
+
+/** `SearchFormView`'s `fields`/`rows` writes `q`/`field`, `q2`/`field2`/`op2`, … */
+export const databaseSearch = {
+  mode: 'rows',
+  entity: 'items',
+  fields: SEARCH_FIELD_OPTIONS,
+  dates: { presets: centuryPresets },
+  language: 'items',
+  target: 'database-results',
+}
+
+/**
+ * One keyword row per active `qN`/`fieldN`/`opN` key — `SearchFormView`'s own
+ * numbering (row 1 is `q`/`field`, unnumbered) plus the results page's own
+ * fourth, refine-only row (`q4`/`field4`/`op4`), read the same way.
+ */
+export function searchRows(filters) {
+  return [1, 2, 3, 4].map((n) => ({
+    keyword: n === 1 ? filters.q : filters[`q${n}`],
+    field: (n === 1 ? filters.field : filters[`field${n}`]) || 'keyword',
+    cond: n === 1 ? 'AND' : filters[`op${n}`] || 'AND',
+  }))
+}
+
+// A literal `t(...)` per key, not a lookup into `SEARCH_FIELD_OPTIONS` — the
+// field a summary line names is read off the URL, so a name built from it
+// is the one thing the text-name check cannot see is safe.
+function fieldLabel(value, t) {
+  switch (value) {
+    case 'keyword': return t('catalogue.field.keywords')
+    case 'name': return t('sheet.field.name')
+    case 'location': return t('sheet.field.location')
+    case 'provenance': return t('sheet.field.provenance')
+    case 'patron': return t('catalogue.field.patron')
+    case 'artist': return t('catalogue.field.artist')
+    case 'material': return t('catalogue.field.material')
+    case 'other': return t('catalogue.field.other')
+    default: return value
+  }
+}
+
+/** The "Keyword: 'x' AND Location: 'y' · From 900 · Language: FR" line. */
+export function searchSummary({ filters, t, pageInfo }) {
+  const parts = searchRows(filters)
+    .filter((row) => row.keyword)
+    .map((row, i) => `${i > 0 ? `${row.cond} ` : ''}${fieldLabel(row.field, t)}: "${row.keyword}"`)
+  if (filters.from) parts.push(`${t('catalogue.filter.from')} ${filters.from}`)
+  if (filters.to) parts.push(`${t('catalogue.filter.to')} ${filters.to}`)
+  if (filters.lang) parts.push(`${t('catalogue.search.language')}: ${filters.lang.toUpperCase()}`)
+  return [
+    { label: t('catalogue.search.summary'), value: parts.length ? parts.join(' · ') : t('catalogue.results.allItems') },
+    { label: t('catalogue.results.itemsFound'), count: pageInfo.total },
+  ]
+}
+
+/** The row: the thumbnail, the name, the country, the date and the location. */
+export function searchRecord(item) {
+  const text = tr('items', item.id)
+  return {
+    id: item.id,
+    image: item.images?.[0]?.url ?? '',
+    imageAlt: labelOf('items', item.id),
+    name: mdInline(text.name ?? item.internal_name ?? item.id),
+    meta: [labelOf('countries', item.country_id), text.dates, text.location].filter(Boolean),
+    badge: item.type,
+    to: { name: 'item', params: { id: item.id } },
+  }
+}
+
+// `narrow` (the keyword index) is the results view's own, merged onto this
+// at the call site (DatabaseResults.vue) — see the comment above.
+export const databaseResults = {
+  entity: 'items',
+  keys: ['q', 'field', 'q2', 'field2', 'op2', 'q3', 'field3', 'op3', 'q4', 'field4', 'op4', 'from', 'to', 'lang'],
+  scope: (item) => inScope(item),
+  dates: { mode: DATE_MODE, begin: 'from', end: 'to' },
+  // Decision D3's `rank: 'hits'` orders the matches itself; a second,
+  // chronological sort here would undo it.
+  sort: false,
+  pageSize: PAGE_SIZE,
+  variant: 'list',
+  recordRoute: 'item',
+  empty: 'catalogue.results.noResultsSearch',
+  filterTitle: 'catalogue.search.refineHint',
+  pagination: { window: 7 },
+  record: searchRecord,
+  summary: searchSummary,
 }

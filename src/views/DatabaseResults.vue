@@ -1,145 +1,84 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { dateRange, useI18n, useKeywordIndex, useListQuery, usePagination } from '@metanull/viewer-core'
-import { FilterPanel, Pagination, RecordList, ResultsSummary } from '@metanull/viewer-layout/content'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { combineExpansions, countryExpansion, glossaryExpansion, useKeywordIndex } from '@metanull/viewer-core'
+import { CatalogueResultsView } from '@metanull/viewer-layout/views'
 import { useInventoryData } from '../composables/useInventoryData.js'
-import { DATE_MODE, PAGE_SIZE, SEARCH_FIELDS, inScope, useSearchFields } from '../composables/catalogue.js'
+import { SEARCH_FIELDS, databaseResults, searchRows, useSearchFields } from '../composables/catalogue.js'
 
-// The database results: the query in the URL, read by viewer-core; the eight
-// fields and the AND/OR fold of database.php, run by viewer-core's field
-// grammar over this website's field map; the rows, the pages and the summary
-// drawn by viewer-layout. What is this page's is the order of things and
-// the refine row legacy offered under the summary.
+// The database results run on the platform's composed `CatalogueResultsView`
+// (composables/catalogue.js's `databaseResults`): the query in the URL, the
+// pages, the summary line and the rows are declared there. What stays this
+// wrapper's own is the keyword index itself — a live composable tied to the
+// results page's own search language (Decision D3: `rank: 'hits'`, the
+// glossary and country expansions), rather than a plain declaration — the
+// search-language watch legacy's `database_results.php` ran before it
+// searched a language's translations, and the refine row under the summary.
 
-const { t } = useI18n()
-const { labelOf, loadTranslations, mdInline, tr } = useInventoryData()
+const route = useRoute()
+const { loadTranslations } = useInventoryData()
 const fieldOptions = useSearchFields()
 
-// keyword1..3 and their fields come from the search form; keyword4 is the
-// refine row; date_from/date_to and lang apply once to the whole query.
-const { filters, page, apply, goToPage } = useListQuery({
-  keys: [
-    'keyword1', 'field1', 'keyword2', 'field2', 'cond2', 'keyword3', 'field3', 'cond3',
-    'keyword4', 'field4', 'cond4', 'date_from', 'date_to', 'lang',
-  ],
+watch(() => route.query.lang, (lang) => { if (lang) loadTranslations('items', lang) }, { immediate: true })
+
+const index = useKeywordIndex('items', {
+  grammar: 'fields',
+  fields: SEARCH_FIELDS,
+  language: () => route.query.lang || '',
+  rank: 'hits',
+  expand: combineExpansions(glossaryExpansion(), countryExpansion()),
 })
 
-// The search language's translations, loaded when it is chosen; English is
-// always there and is what the index falls back to.
-watch(() => filters.lang, (lang) => { if (lang) loadTranslations('items', lang) }, { immediate: true })
-
-const index = useKeywordIndex('items', { grammar: 'fields', fields: SEARCH_FIELDS, language: () => filters.lang })
-
-const keywordRows = computed(() =>
-  [1, 2, 3, 4].map((n) => ({
-    keyword: filters[`keyword${n}`],
-    field: filters[`field${n}`] || 'keyword',
-    cond: n === 1 ? 'AND' : filters[`cond${n}`] || 'AND',
-  })),
-)
-
-const results = computed(() => {
-  const hits = index.search(keywordRows.value).filter(inScope)
-  return dateRange(hits, { begin: filters.date_from, end: filters.date_to, mode: DATE_MODE })
-})
-
-const pageInfo = usePagination(results, { page, size: PAGE_SIZE })
-
-const rows = computed(() =>
-  pageInfo.value.rows.map((item) => {
-    const text = tr('items', item.id)
-    return {
-      id: item.id,
-      image: item.images?.[0]?.url ?? '',
-      imageAlt: labelOf('items', item.id),
-      name: mdInline(text.name ?? item.internal_name ?? item.id),
-      meta: [labelOf('countries', item.country_id), text.dates, text.location].filter(Boolean),
-      badge: item.type,
-      to: { name: 'item', params: { id: item.id } },
-    }
-  }),
-)
-
-// ── The summary of what was searched ───────────────────────────────────────
-
-function fieldLabel(value) {
-  return fieldOptions.value.find((f) => f.value === value)?.label ?? value
+// `index.search` reads the whole `items` entity; `list` already carries
+// `databaseResults`'s own `scope` (in-scope items only) by the time `narrow`
+// runs — narrowed to the keyword hits inside that set, in the index's own
+// ranked order, rather than the reverse (which would lose the rank once
+// `list` is filtered again).
+function narrow(list, filters) {
+  const ids = new Set(list.map((item) => item.id))
+  return index.search(searchRows(filters)).filter((item) => ids.has(item.id))
 }
 
-const searchedFor = computed(() => {
-  const parts = keywordRows.value
-    .filter((row) => row.keyword)
-    .map((row, i) => `${i > 0 ? `${row.cond} ` : ''}${fieldLabel(row.field)}: "${row.keyword}"`)
-  if (filters.date_from) parts.push(`${t('catalogue.filter.from')} ${filters.date_from}`)
-  if (filters.date_to) parts.push(`${t('catalogue.filter.to')} ${filters.date_to}`)
-  if (filters.lang) parts.push(`${t('catalogue.search.language')}: ${filters.lang.toUpperCase()}`)
-  return parts
-})
-
-const summary = computed(() => [
-  { label: t('catalogue.search.summary'), value: searchedFor.value.length ? searchedFor.value.join(' · ') : t('catalogue.results.allItems') },
-  { label: t('catalogue.results.itemsFound'), count: pageInfo.value.total },
-])
-
-// ── The refine row ─────────────────────────────────────────────────────────
-
-const showRefine = ref(false)
-const refine = ref({ keyword: '', field: 'keyword', cond: 'AND' })
-
-function applyRefine() {
-  if (!refine.value.keyword.trim()) return
-  apply({ keyword4: refine.value.keyword, field4: refine.value.field, cond4: refine.value.cond })
-  showRefine.value = false
-}
+const spec = computed(() => ({ ...databaseResults, narrow }))
 </script>
 
 <template>
-  <div>
-    <h1 class="section-heading">{{ $t('sharinghistory.nav.database') }} — {{ $t('catalogue.results.heading') }}</h1>
+  <CatalogueResultsView :spec="spec" class="database-results">
+    <template #before>
+      <h1 class="section-heading">{{ $t('sharinghistory.nav.database') }} — {{ $t('catalogue.results.heading') }}</h1>
+    </template>
 
-    <div class="content-box">
-      <ResultsSummary :parts="summary">
-        <template #actions>
-          <RouterLink :to="{ name: 'database' }" class="btn btn-secondary small">{{ $t('catalogue.search.newSearch') }}</RouterLink>
-          <button type="button" class="btn small" @click="showRefine = !showRefine">{{ $t('catalogue.search.refine') }}</button>
-        </template>
-      </ResultsSummary>
+    <template #actions>
+      <RouterLink :to="{ name: 'database' }" class="btn btn-secondary small">{{ $t('catalogue.search.newSearch') }}</RouterLink>
+    </template>
 
-      <FilterPanel
-        v-if="showRefine"
-        class="refine"
-        :title="$t('catalogue.search.refineHint')"
-        :apply-label="$t('core.action.add')"
-        :reset-label="$t('core.action.close')"
-        @apply="applyRefine"
-        @reset="showRefine = false"
-      >
-        <select v-model="refine.cond" class="cond">
-          <option value="AND">{{ $t('catalogue.search.and') }}</option>
-          <option value="OR">{{ $t('catalogue.search.or') }}</option>
-        </select>
-        <select v-model="refine.field" class="field">
-          <option v-for="f in fieldOptions" :key="f.value" :value="f.value">{{ f.label }}</option>
-        </select>
-        <input v-model="refine.keyword" type="text" class="keyword" :placeholder="$t('catalogue.search.keywordPlaceholder')" />
-      </FilterPanel>
+    <template #filters="{ filters }">
+      <select v-model="filters.op4" class="cond">
+        <option value="AND">{{ $t('catalogue.search.and') }}</option>
+        <option value="OR">{{ $t('catalogue.search.or') }}</option>
+      </select>
+      <select v-model="filters.field4" class="field">
+        <option v-for="f in fieldOptions" :key="f.value" :value="f.value">{{ f.label }}</option>
+      </select>
+      <input v-model="filters.q4" type="text" class="keyword" :placeholder="$t('catalogue.search.keywordPlaceholder')" />
+    </template>
 
-      <RecordList :records="rows">
-        <template #empty>
-          {{ $t('catalogue.results.noResultsSearch') }}
-          <RouterLink :to="{ name: 'database' }">{{ $t('catalogue.search.tryNewSearch') }}</RouterLink>
-        </template>
-      </RecordList>
-
-      <Pagination :page-info="pageInfo" :window="7" @navigate="goToPage" />
-    </div>
-  </div>
+    <template #empty>
+      {{ $t('catalogue.results.noResultsSearch') }}
+      <RouterLink :to="{ name: 'database' }">{{ $t('catalogue.search.tryNewSearch') }}</RouterLink>
+    </template>
+  </CatalogueResultsView>
 </template>
 
 <style scoped>
+.database-results {
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+
 .btn.small { font-size: 12px; padding: 4px 12px; text-decoration: none; }
 .btn.small + .btn.small { margin-left: 8px; }
-.refine { margin: 12px 0; }
 .cond { width: 60px; }
 .field { width: 200px; }
 .keyword { width: 200px; }

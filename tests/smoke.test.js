@@ -539,6 +539,103 @@ describe('website smoke test', () => {
     app.unmount()
   }, 60000)
 
+  // The search entrance runs on the platform's composed `SearchFormView`
+  // (composables/catalogue.js's `databaseSearch`): the three keyword rows,
+  // the search-language select and the AND/OR fold are the shared
+  // component's; asserted here is this website's own field grammar and
+  // legacy database.php's fixed century boundaries (Decision D2).
+  it('renders the search entrance on the composed form view, with the field options and century dates', async () => {
+    const { app, host } = await mountSite('#/database')
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-search-form')).not.toBeNull(), { timeout: 20000 })
+
+    expect(host.querySelectorAll('.mwnf-search-form__row').length).toBe(3)
+    const fieldValues = Array.from(host.querySelector('.mwnf-search-form__field').querySelectorAll('option')).map((o) => o.value)
+    expect(fieldValues).toEqual(['keyword', 'name', 'location', 'provenance', 'patron', 'artist', 'material', 'other'])
+
+    // 16 "from" years (a blank "any" option first) — legacy's own century boundaries.
+    const dateSelects = host.querySelectorAll('.mwnf-search-form__dates select')
+    expect(Array.from(dateSelects[0].querySelectorAll('option')).map((o) => o.textContent)).toContain('501')
+    expect(dateSelects[0].querySelectorAll('option').length).toBe(17)
+
+    expect(host.querySelector('.mwnf-search-form__language')).not.toBeNull()
+    app.unmount()
+  }, 20000)
+
+  // The database results run on the platform's composed `CatalogueResultsView`
+  // (composables/catalogue.js's `databaseResults`); this website's own is the
+  // keyword index itself (DatabaseResults.vue) — Decision D3's `rank: 'hits'`
+  // and the country expansion, which lets a country's own name (not just its
+  // id) match the "Location" field (`SEARCH_FIELDS.location` carries
+  // `item.country_id` for exactly this).
+  it('renders database results for a country name typed into the Location field', async () => {
+    const [items] = await loadEntities(['items'])
+    const countryId = 'ita'
+    const countryName = countryTexts[countryId]?.name
+    expect(countryName, 'fixture: Italy has an English name').toBeTruthy()
+    const visibleItalyItems = items.filter((i) => i.display_status !== 'N' && i.country_id === countryId)
+    expect(visibleItalyItems.length, 'fixture: Italy has visible items').toBeGreaterThan(0)
+
+    const { app, host } = await mountSite(
+      `#/database/results?q=${encodeURIComponent(countryName)}&field=location`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
+
+    // The summary line names the field and the term, off the country
+    // expansion rather than a literal "Location" text match.
+    expect(host.querySelector('.mwnf-summary__value').textContent).toContain(`Location: "${countryName}"`)
+    // A country's own 3-letter id can turn up as a plain substring elsewhere
+    // (Lebanon's "Je'ita" carries "ita"), so the count is a floor, not exact.
+    expect(Number(host.querySelector('.mwnf-summary__count').textContent)).toBeGreaterThanOrEqual(visibleItalyItems.length)
+
+    app.unmount()
+  }, 60000)
+
+  // The refine row (`DatabaseResults.vue`'s `#filters` slot, over the
+  // platform's own `filters` reactive object) ANDs a fourth keyword onto the
+  // three the entrance form wrote — asserted here narrowing a country's 247
+  // items down to the one whose name carries a fixture word found nowhere
+  // else, rather than just checking the row count changed.
+  it('narrows the database results with the refine row\'s fourth keyword', async () => {
+    const [items] = await loadEntities(['items'])
+    const fixture = items.find((i) => i.display_status !== 'N' && /worthy/i.test(itemTexts[i.id]?.name ?? ''))
+    expect(fixture, 'fixture: a visible item with a distinctive name word').not.toBeNull()
+    const expectedName = itemTexts[fixture.id].name.replace(/[*_]/g, '')
+
+    const { app, host } = await mountSite(
+      `#/database/results?q=${encodeURIComponent(countryTexts[fixture.country_id].name)}&field=location&q4=worthy&field4=name&op4=AND`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
+
+    expect(host.querySelector('.mwnf-summary__count').textContent).toBe('1')
+    expect(host.textContent).toContain(expectedName)
+
+    app.unmount()
+  }, 60000)
+
+  // The Permanent Collection entrance runs on the platform's composed
+  // `SearchFormView` (`radio` mode, composables/catalogue.js): the country
+  // and holding-institution radios are `FACETS` — the same values, labelled
+  // and filtered, the results page itself offers — and the theme radio is
+  // this site's own, over the exhibition tree rather than a record facet.
+  it('renders the Permanent Collection entrance on the composed radio form, with real facet options', async () => {
+    const [countries] = await loadEntities(['countries'])
+    const { app, host } = await mountSite('#/permanent-collection')
+    await vi.waitFor(() => expect(host.querySelectorAll('.mwnf-search-form__radio-row').length).toBeGreaterThan(0), { timeout: 20000 })
+
+    const radioRows = host.querySelectorAll('.mwnf-search-form__radio-row')
+    expect(radioRows.length).toBe(5)
+
+    // The country radio's own select carries a real, labelled country — not
+    // a raw id, and not every country the package ships (only the ones a
+    // visible item actually carries).
+    const countrySelect = radioRows[0].querySelector('select')
+    const countryLabels = Array.from(countrySelect.querySelectorAll('option')).map((o) => o.textContent)
+    const anyCountryWithLabel = countries.find((c) => countryLabels.includes(countryTexts[c.id]?.name))
+    expect(anyCountryWithLabel, 'fixture: a country offered by the radio is labelled by name').toBeDefined()
+
+    app.unmount()
+  }, 20000)
+
   it('declares every route by name, and leaves the catch-all to the router', () => {
     const names = config.extraViews.map((r) => r.name)
     for (const name of [
