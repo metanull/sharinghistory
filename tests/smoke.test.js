@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { createViewer, mergeMessages, useDataPackage } from '@metanull/viewer-core'
+import { describe, expect, it, vi } from 'vitest'
+import { createViewer, loadEntities, mergeMessages, useDataPackage } from '@metanull/viewer-core'
 import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
@@ -12,8 +12,8 @@ import { useInventoryData } from '../src/composables/useInventoryData.js'
 // nothing about the chrome — every text would render as its own name.
 const messages = mergeMessages(sharedTexts, { en: ownTexts })
 
-async function mountSite() {
-  window.location.hash = '#/'
+async function mountSite(hash = '#/') {
+  window.location.hash = hash
   const app = createViewer({ ...config, messages })
   const host = document.createElement('div')
   document.body.appendChild(host)
@@ -43,6 +43,24 @@ describe('website smoke test', () => {
 
     app.unmount()
   }, 20000)
+
+  // The item sheet runs on the platform's composed record view
+  // (metanull/viewer-core#50): the rows and their labels come from the sheet
+  // spec in composables/sheet.js, and what only this website has — the
+  // header, the holder's partner link, the special features — fills the
+  // view's slots.
+  it('renders the item sheet on the composed record view', async () => {
+    const [items, partners] = await loadEntities(['items', 'partners'])
+    const partnerIds = new Set(partners.map((p) => p.id))
+    const object = items.find((i) => i.type === 'object' && i.partner_id && partnerIds.has(i.partner_id)) ?? items[0]
+    const { app, host } = await mountSite(`#/item/${encodeURIComponent(object.id)}`)
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-sheet__label')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-record')).not.toBeNull()
+    expect(host.querySelector('.detail-type-badge').textContent.trim()).toBe(object.type)
+    expect(host.querySelector('.detail-title').textContent.trim()).not.toBe('')
+    expect(host.querySelector('.fact-link a')).not.toBeNull()
+    app.unmount()
+  }, 60000)
 
   it('declares every route by name, and leaves the catch-all to the router', () => {
     const names = config.extraViews.map((r) => r.name)
