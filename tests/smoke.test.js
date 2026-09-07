@@ -3,6 +3,7 @@ import { createViewer, loadEntities, mergeMessages, useDataPackage } from '@meta
 import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
+import { itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { OFFERED_LANGUAGES } from '../src/languages.js'
 import { useInventoryData } from '../src/composables/useInventoryData.js'
@@ -43,6 +44,45 @@ describe('website smoke test', () => {
 
     app.unmount()
   }, 20000)
+
+  // The Permanent Collection list runs on the platform's composed results
+  // view (metanull/viewer-core#50): the rows and the filter panel come from
+  // the catalogue spec in composables/catalogue.js, the exhibition cascade
+  // and the heading from PcList.vue's slots.
+  it('renders the Permanent Collection on the composed results view', async () => {
+    const { app, host } = await mountSite('#/permanent-collection/results')
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-catalogue')).not.toBeNull()
+    expect(host.querySelector('.mwnf-filter')).not.toBeNull()
+    expect(host.querySelector('.section-heading').textContent).toContain('Permanent Collection')
+    // Legacy's count, in its two halves ("N objects", "M monuments").
+    expect(host.querySelectorAll('.mwnf-summary__count').length).toBe(2)
+    app.unmount()
+  }, 60000)
+
+  // The exhibition cascade in PcList.vue's `filters` slot narrows the list
+  // the way the pre-adoption view did: an `exhibition` query narrows to that
+  // exhibition's subtree, which is `scope` in the spec rather than a facet
+  // (itemIdsUnder, composables/catalogue.js).
+  it('narrows the Permanent Collection to one exhibition', async () => {
+    const [collections] = await loadEntities(['collections'])
+    const marker = collections.find((c) => c.purpose === 'exhibitions-root')
+    const exhibition = collections.find((c) => c.parent_id === marker.id)
+    const scopedIds = itemIdsUnder(exhibition.id)
+
+    const { app, host } = await mountSite(
+      `#/permanent-collection/results?exhibition=${encodeURIComponent(exhibition.id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
+
+    const rowIds = Array.from(host.querySelectorAll('.mwnf-list__row .mwnf-list__link')).map((a) =>
+      decodeURIComponent(a.getAttribute('href').split('/').pop()),
+    )
+    expect(rowIds.length).toBeGreaterThan(0)
+    for (const id of rowIds) expect(scopedIds.has(id)).toBe(true)
+
+    app.unmount()
+  }, 60000)
 
   // The item sheet runs on the platform's composed record view
   // (metanull/viewer-core#50): the rows and their labels come from the sheet
