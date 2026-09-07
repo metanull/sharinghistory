@@ -4,7 +4,8 @@ import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
 import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
-import { itemIdsUnder } from '../src/composables/catalogue.js'
+import countryTexts from '@metanull/sharinghistory-data/translations/countries.en.json'
+import { collectionTitle, itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { exhibitionTree } from '../src/composables/exhibitions.js'
 import { historicalProfilesTree } from '../src/composables/history.js'
@@ -208,6 +209,46 @@ describe('website smoke test', () => {
 
     app.unmount()
   }, 60000)
+
+  // National Context collections (purpose "national-context", #54) carry no
+  // title of their own and sit next to a theme under an exhibition, so a
+  // theme address built from one must not fall through to `EssayView`'s
+  // own not-found (a missing id) or to an essay headed by the internal name
+  // — it is caught earlier, by exhibitionTree membership (exhibitions.js).
+  it('renders not-found for a National Context id on the theme route, not an essay page', async () => {
+    const [collections] = await loadEntities(['collections'])
+    const nc = collections.find((c) => c.purpose === 'national-context')
+    expect(nc, 'fixture: a National Context collection').toBeDefined()
+    const exhibition = collections.find((c) => c.id === nc.parent_id)
+    expect(exhibition, 'fixture: the National Context collection\'s own exhibition').toBeDefined()
+
+    const { app, host } = await mountSite(
+      `#/exhibitions/${encodeURIComponent(exhibition.id)}/theme/${encodeURIComponent(nc.id)}`,
+    )
+    await vi.waitFor(() => expect(host.querySelector('.vc-not-found')).not.toBeNull(), { timeout: 20000 })
+    expect(host.querySelector('.mwnf-essay')).toBeNull()
+    expect(host.textContent).not.toContain(nc.internal_name)
+
+    app.unmount()
+  }, 60000)
+
+  // Legacy always named a National Context collection by its country
+  // (class.nationalcontext.inc.php joins mwnf3.countrynames for every list);
+  // the importer writes it no title of its own, so `collectionTitle` reads
+  // the country instead (composables/catalogue.js).
+  it('labels a National Context collection by its country, not its internal name', async () => {
+    const [collections] = await loadEntities(['collections'])
+    const nc = collections.find((c) => c.purpose === 'national-context')
+    expect(nc, 'fixture: a National Context collection').toBeDefined()
+
+    const { loadTranslations } = useDataPackage()
+    await loadTranslations('countries', 'en')
+
+    const expectedName = countryTexts[nc.country_id]?.name
+    expect(expectedName, 'fixture: the collection\'s country has an English name').toBeTruthy()
+    expect(collectionTitle(nc)).toBe(expectedName)
+    expect(collectionTitle(nc)).not.toContain(nc.internal_name)
+  })
 
   // The Historical Background/Profiles pages, and the country page, run on
   // `useCollectionTree` (composables/history.js) and `EssayView`

@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from '@metanull/viewer-core'
+import { NotFoundView, useI18n } from '@metanull/viewer-core'
 import { EssayView } from '@metanull/viewer-layout/views'
 import { curatorJustification, exhibitionChapterSpec, partnerJustification } from '../composables/exhibitionSpecs.js'
+import { inExhibitionTree } from '../composables/exhibitions.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 // The chapter page: the essay, the picture panel (with its detail
@@ -20,7 +21,12 @@ const { md, mdInline } = useInventoryData()
 </script>
 
 <template>
-  <EssayView :spec="exhibitionChapterSpec" :id="chapterId">
+  <!-- EssayView resolves `id` through the tree's raw `byId`, which a National
+       Context collection matches just as a real chapter would (#54) —
+       checked here rather than inside EssayView, since only this site knows
+       which ids are its own. -->
+  <NotFoundView v-if="!inExhibitionTree(chapterId)" />
+  <EssayView v-else :spec="exhibitionChapterSpec" :id="chapterId">
     <template #justifications="{ node, selected, language }">
       <p v-if="curatorJustification(selected, node, language)" class="chapter-justification">
         <span class="chapter-justification__label">{{ t('sharinghistory.exhibition.curatorJustification') }}</span>

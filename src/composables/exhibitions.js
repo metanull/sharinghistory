@@ -101,3 +101,20 @@ export function exhibitionNodeRoute(node) {
 export function exhibitionAncestry(node) {
   return ancestryWithin(node.id)
 }
+
+/**
+ * True when `id` is a real node of this tree — the root itself, or reachable
+ * through `children()`'s own type filtering (exhibition → theme → chapter).
+ * `byId`/`parents` walk the raw `parent_id` chain regardless of type, so a
+ * National Context collection (#54, purpose "national-context") — sitting
+ * next to a theme under its exhibition but never a `children()` result —
+ * resolves through those two just as a real theme or chapter would; this is
+ * the check that tells the two apart. Used by the theme and chapter routes
+ * so such an id renders not-found instead of an essay page headed by the
+ * collection's internal name.
+ */
+export function inExhibitionTree(id) {
+  const root = rawTree.root.value
+  if (!root) return false
+  return id === root.id || rawTree.walk().some((node) => node.id === id)
+}
