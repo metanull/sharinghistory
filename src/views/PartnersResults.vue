@@ -1,108 +1,41 @@
 <script setup>
-import { computed } from 'vue'
-import { useI18n } from '@metanull/viewer-core'
-import { useInventoryData } from '../composables/useInventoryData.js'
+import { BackLink } from '@metanull/viewer-layout/content'
+import { PartnerListView } from '@metanull/viewer-layout/views'
+import { partnersList } from '../composables/partner.js'
 
-const {
-  partners,
-  labelOf,
-  tr,
-} = useInventoryData()
-const { t } = useI18n()
-
-// SH has a single Partners concept (no museum/institution split — the
-// legacy pm_partner_list.php lists ALL sh_partners grouped by country), and no
-// second curated list to switch to, so there is no type heading and no
-// "view … instead" link here.
-// Like legacy's INNER JOINs on sh_partner_names + mwnf3.countrynames, only
-// partners with a name translation AND a country are listed — this
-// reproduces the live site's 114-partner list (27 main + 87 associated) out
-// of the 120 in the package (the rest are placeholder rows: "Not know yet",
-// "Public Domain", or nameless).
-const groupedByCountry = computed(() => {
-  const named = partners.value.filter(p => tr('partners', p.id)?.name && p.country_id)
-
-  const countries = new Map()
-  for (const p of named) {
-    const key = p.country_id ?? ''
-    if (!countries.has(key)) countries.set(key, { main: [], associated: [] })
-    const bucket = countries.get(key)
-    if (p.level === 'associated_partner' || p.level === 'minor_contributor') {
-      bucket.associated.push(p)
-    } else {
-      bucket.main.push(p)
-    }
-  }
-
-  return [...countries.entries()]
-    .map(([countryId, group]) => ({
-      countryId,
-      name: countryId ? labelOf('countries', countryId) : t('sharinghistory.results.otherCountry'),
-      main: group.main.sort((a, b) => labelOf('partners', a.id).localeCompare(labelOf('partners', b.id))),
-      associated: group.associated.sort((a, b) => labelOf('partners', a.id).localeCompare(labelOf('partners', b.id))),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name))
-})
-
-const totalCount = computed(() =>
-  groupedByCountry.value.reduce((sum, g) => sum + g.main.length + g.associated.length, 0)
-)
-
-function partnerLink(partner) {
-  return { path: `/partner/${encodeURIComponent(partner.id)}` }
-}
-
-// Legacy pm_partner_list.php prints "Name, City" per row.
-function partnerRowLabel(partner) {
-  const city = tr('partners', partner.id)?.city
-  return city ? `${labelOf('partners', partner.id)}, ${city}` : labelOf('partners', partner.id)
+// `PartnerListView`'s own count (`spec.count`) sums only `main`/`associated`
+// — with `nested: true` an associated partner moved under its parent is in
+// neither, so the "Partners found" line would undercount. Walked here
+// instead, over the same `groups` the view hands every slot.
+function totalCount(groups) {
+  return groups.reduce(
+    (sum, group) => sum + group.main.reduce((s, entry) => s + 1 + (entry.children?.length ?? 0), 0) + group.associated.length,
+    0,
+  )
 }
 </script>
 
 <template>
-  <div>
-    <RouterLink to="/partners" class="back-link">‹ {{ $t('partner.nav.back') }}</RouterLink>
-
-    <h1 class="section-heading">
-      {{ $t('sharinghistory.nav.partners') }}
-      <span class="heading-project"> — {{ $t('sharinghistory.identity.title') }}</span>
-    </h1>
-
-    <div class="content-box">
-      <p class="result-count">
-        {{ $t('sharinghistory.results.partnersFound') }}: {{ totalCount }}
-      </p>
-
-      <div v-if="groupedByCountry.length" class="country-accordion">
-        <details v-for="group in groupedByCountry" :key="group.countryId" class="country-group" open>
-          <summary class="country-head">
-            <h3>{{ group.name }}</h3>
-          </summary>
-
-          <div class="country-body">
-            <div class="partner-col">
-              <p v-for="p in group.main" :key="p.id">
-                <RouterLink :to="partnerLink(p)">{{ partnerRowLabel(p) }}</RouterLink>
-              </p>
-            </div>
-
-            <div v-if="group.associated.length" class="partner-col associated-col">
-              <p class="associated-label">{{ $t('partner.list.associated') }}</p>
-              <p v-for="p in group.associated" :key="p.id">
-                <RouterLink :to="partnerLink(p)">{{ partnerRowLabel(p) }}</RouterLink>
-              </p>
-            </div>
-          </div>
-        </details>
-      </div>
-
-      <p v-else class="no-results">{{ $t('sharinghistory.partner.noPartners') }}</p>
-    </div>
-  </div>
+  <PartnerListView :spec="partnersList" class="partners-results">
+    <template #before="{ groups }">
+      <BackLink label="partner.nav.back" :to="{ name: 'partners' }" />
+      <h1 class="section-heading">
+        {{ $t('sharinghistory.nav.partners') }}
+        <span class="heading-project"> — {{ $t('sharinghistory.identity.title') }}</span>
+      </h1>
+      <p class="result-count">{{ $t('sharinghistory.results.partnersFound') }}: {{ totalCount(groups) }}</p>
+    </template>
+  </PartnerListView>
 </template>
 
 <style scoped>
 .heading-project { font-weight: normal; font-size: 14px; color: var(--muted); }
+
+.partners-results {
+  background: var(--content-bg);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
 
 .result-count {
   font-family: 'Roboto', sans-serif;
@@ -113,45 +46,47 @@ function partnerRowLabel(partner) {
   border-bottom: 1px solid var(--border);
 }
 
-.no-results { color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 13px; padding: 20px 0; }
+.partners-results :deep(.mwnf-partner-list__empty) { color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 13px; padding: 20px 0; }
 
-.country-group {
+.partners-results :deep(.mwnf-partner-list__group) {
   border-bottom: 1px solid var(--border-light);
   padding: 10px 0;
 }
-.country-group:last-child { border-bottom: none; }
+.partners-results :deep(.mwnf-partner-list__group:last-child) { border-bottom: none; }
 
-.country-head {
-  cursor: pointer;
-  list-style: none;
-}
-.country-head::-webkit-details-marker { display: none; }
-.country-head h3 {
+.partners-results :deep(.mwnf-partner-list__group-heading) { cursor: pointer; list-style: none; }
+.partners-results :deep(.mwnf-partner-list__group-heading)::-webkit-details-marker { display: none; }
+.partners-results :deep(.mwnf-partner-list__group-title) {
   display: inline-block;
   font-size: 15px;
   font-weight: 500;
   color: var(--heading);
   font-family: 'Roboto', sans-serif;
 }
-.country-head h3::before {
-  content: '▸ ';
-  color: var(--accent);
-}
-details[open] > .country-head h3::before { content: '▾ '; }
+.partners-results :deep(.mwnf-partner-list__group-title)::before { content: '▸ '; color: var(--accent); }
+.partners-results :deep(details[open] > .mwnf-partner-list__group-heading .mwnf-partner-list__group-title)::before { content: '▾ '; }
 
-.country-body {
+.partners-results :deep(.mwnf-partner-list__tier) {
   display: flex;
   gap: 32px;
   padding: 8px 0 4px 16px;
   flex-wrap: wrap;
 }
-.partner-col { flex: 1; min-width: 220px; }
-.partner-col p {
+.partners-results :deep(.mwnf-partner-list__row-block) { flex: 1; min-width: 220px; }
+.partners-results :deep(.mwnf-partner-list__row) {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   font-size: 13px;
   font-family: 'Roboto', sans-serif;
   padding: 3px 0;
 }
-.associated-label {
+.partners-results :deep(.mwnf-partner-list__children) { padding-left: 16px; }
+.partners-results :deep(.mwnf-partner-list__logo) { width: 28px; height: 28px; object-fit: contain; }
+.partners-results :deep(.mwnf-partner-list__meta) { color: var(--muted); font-size: 11px; }
+
+.partners-results :deep(.mwnf-partner-list__tier--associated) { flex: 1 0 100%; }
+.partners-results :deep(.mwnf-partner-list__tier-label) {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;

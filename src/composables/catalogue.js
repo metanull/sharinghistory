@@ -172,6 +172,24 @@ function scopedItemIds(id) {
   return scopeCache.ids
 }
 
+// The shared record shape (`RecordList`/`RecordGrid`/`RelatedRecords`'
+// contract) for one item, name/country/date only — no holder, unlike the
+// Permanent Collection's own row, since a caller that already knows the
+// holder (a partner's own held items) has no reason to repeat it. Shared by
+// the timeline gallery and the partner sheet's held-items grid.
+export function itemSummary(item) {
+  const text = tr('items', item.id)
+  return {
+    id: item.id,
+    image: item.images?.[0]?.url ?? '',
+    imageAlt: labelOf('items', item.id),
+    name: mdInline(text.name ?? item.internal_name ?? item.id),
+    meta: [labelOf('countries', item.country_id), text.dates].filter(Boolean),
+    badge: item.type,
+    to: { name: 'item', params: { id: item.id } },
+  }
+}
+
 // "[N objects, M monuments]", legacy's phrasing of the count — shared by
 // every results page over `items` (the Permanent Collection, the timeline
 // gallery), since the type split is the entity's own, not one page's.
