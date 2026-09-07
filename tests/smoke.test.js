@@ -3,6 +3,7 @@ import { createViewer, loadEntities, mergeMessages, useDataPackage } from '@meta
 import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
+import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
 import { itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { exhibitionTree } from '../src/composables/exhibitions.js'
@@ -114,6 +115,22 @@ describe('website smoke test', () => {
     expect(host.querySelector('.mwnf-essay__panel')).not.toBeNull()
     expect(host.querySelector('.theme-chapters')).not.toBeNull()
 
+    // The view reads the collection's title through the tree's own entity,
+    // not through a fallback to the spec's entity. A wrong entity renders
+    // the internal_name instead of the translated title.
+    const titleEl = host.querySelector('.mwnf-essay__title')
+    expect(titleEl).not.toBeNull()
+    const expectedTitle = collectionTexts[theme.id]?.title
+    expect(titleEl.textContent.trim()).toContain(expectedTitle)
+    expect(titleEl.textContent).not.toContain(theme.internal_name)
+
+    // When the collection carries a description, the body must render it.
+    if (collectionTexts[theme.id]?.description) {
+      const bodyEl = host.querySelector('.mwnf-essay__body, .mwnf-essay__prose')
+      expect(bodyEl).not.toBeNull()
+      expect(bodyEl.textContent).toBeTruthy()
+    }
+
     app.unmount()
   }, 60000)
 
@@ -144,6 +161,22 @@ describe('website smoke test', () => {
     await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
     expect(host.querySelector('.mwnf-essay__panel')).not.toBeNull()
     expect(host.querySelector('.chapter-justification')).not.toBeNull()
+
+    // The view reads the collection's title through the tree's own entity,
+    // not through a fallback to the spec's entity. A wrong entity renders
+    // the internal_name instead of the translated title.
+    const titleEl = host.querySelector('.mwnf-essay__title')
+    expect(titleEl).not.toBeNull()
+    const expectedTitle = collectionTexts[fixture.chapter.id]?.title
+    expect(titleEl.textContent.trim()).toContain(expectedTitle)
+    expect(titleEl.textContent).not.toContain(fixture.chapter.internal_name)
+
+    // When the collection carries a description, the body must render it.
+    if (collectionTexts[fixture.chapter.id]?.description) {
+      const bodyEl = host.querySelector('.mwnf-essay__body, .mwnf-essay__prose')
+      expect(bodyEl).not.toBeNull()
+      expect(bodyEl.textContent).toBeTruthy()
+    }
 
     app.unmount()
   }, 60000)
@@ -227,6 +260,22 @@ describe('website smoke test', () => {
     expect(host.querySelector('.mwnf-essay__breadcrumb-link')).not.toBeNull()
     expect(host.querySelector('.mwnf-essay__breadcrumb-link').textContent).not.toBe('')
     expect(host.querySelector('.mwnf-essay__nav-link--next')).not.toBeNull()
+
+    // The view reads the collection's title through the tree's own entity,
+    // not through a fallback to the spec's entity. A wrong entity renders
+    // the internal_name instead of the translated title.
+    const titleEl = host.querySelector('.mwnf-essay__title')
+    expect(titleEl).not.toBeNull()
+    const expectedTitle = collectionTexts[fixture.pages[0].id]?.title
+    expect(titleEl.textContent.trim()).toContain(expectedTitle)
+    expect(titleEl.textContent).not.toContain(fixture.pages[0].internal_name)
+
+    // When the collection carries a description, the body must render it.
+    if (collectionTexts[fixture.pages[0].id]?.description) {
+      const bodyEl = host.querySelector('.mwnf-essay__body, .mwnf-essay__prose')
+      expect(bodyEl).not.toBeNull()
+      expect(bodyEl.textContent).toBeTruthy()
+    }
 
     app.unmount()
   }, 60000)
