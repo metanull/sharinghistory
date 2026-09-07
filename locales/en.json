@@ -118,6 +118,7 @@
   "sharinghistory.timeline.errorPeriod": "Please select a valid time period (start must be before end).",
   "sharinghistory.timeline.errorSelect": "Please select a country, or a start and end date.",
   "sharinghistory.timeline.intro": "Explore historical events of the period 1815 – 1918. Select a country and/or a time period, choose the Permanent Collection timeline or one of the thematic exhibition timelines, then click **Go**.",
+  "sharinghistory.timeline.politicalContext": "Political Context",
   "sharinghistory.timeline.selectCountry": "Select a Country",
   "sharinghistory.timeline.startDate": "Start Date",
   "sharinghistory.timeline.yearSuffix": "AD"
