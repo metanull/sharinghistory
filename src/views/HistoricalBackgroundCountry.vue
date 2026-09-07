@@ -10,10 +10,9 @@ const {
   historicalBackgroundRecords,
   historicalBackgroundPages,
   itemById,
-  itemLabel,
+  labelOf,
   availableLanguages,
   defaultLang,
-  countryLabel,
   md,
   mdInline,
   tr,
@@ -93,7 +92,7 @@ const pageItems = computed(() => {
     <router-link class="back-link" to="/historical-profiles">← {{ $t('sharinghistory.nav.historicalProfiles') }}</router-link>
 
     <div class="content-box">
-      <p v-if="record.country_id" class="hb-country-tag">{{ countryLabel(record.country_id) }}</p>
+      <p v-if="record.country_id" class="hb-country-tag">{{ labelOf('countries', record.country_id) }}</p>
       <h1 class="hb-title" v-html="mdInline(recordText.title ?? record.internal_name)" />
       <div v-if="recordText.description" class="prose" v-html="md(recordText.description)" />
 
@@ -133,9 +132,9 @@ const pageItems = computed(() => {
               :to="`/item/${encodeURIComponent(item.id)}`"
               class="hb-item-card"
             >
-              <img v-if="item.images?.length" :src="item.images[0].url" :alt="itemLabel(item)" loading="lazy" />
+              <img v-if="item.images?.length" :src="item.images[0].url" :alt="labelOf('items', item.id)" loading="lazy" />
               <div v-else class="hb-item-placeholder" />
-              <span class="hb-item-name">{{ itemLabel(item) }}</span>
+              <span class="hb-item-name">{{ labelOf('items', item.id) }}</span>
             </RouterLink>
           </div>
         </div>
@@ -150,7 +149,7 @@ const pageItems = computed(() => {
             <RouterLink
               :to="{ path: '/timeline/results', query: { country: record.country_id, exhibition: 'pc' } }"
             >
-              {{ $t('sharinghistory.related.politicalContextTimeline') }} {{ countryLabel(record.country_id) }}
+              {{ $t('sharinghistory.related.politicalContextTimeline') }} {{ labelOf('countries', record.country_id) }}
             </RouterLink>
           </li>
           <li v-if="bibliography"><a href="#hb-bibliography">{{ $t('sharinghistory.history.bibliography') }}</a></li>

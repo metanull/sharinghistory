@@ -17,7 +17,7 @@ import { itemSheet } from '../composables/sheet.js'
 defineProps({ id: { type: String, required: true } })
 
 const router = useRouter()
-const { exhibitionLinksForItem, items, md, mdInline, partnerLabel, partners, tr } = useInventoryData()
+const { exhibitionLinksForItem, itemById, labelOf, md, mdInline, partners, tr } = useInventoryData()
 
 function back() {
   if (window.history.length > 2) router.back()
@@ -33,10 +33,13 @@ function partnerRoute(record) {
   return id && (partners.value ?? []).some((p) => p.id === id) ? { name: 'partner', params: { id } } : null
 }
 
-// A monument's sub-details are child items of type `detail`.
+// A monument's sub-details are child items of type `detail`, read from the
+// raw, unfiltered lookup: this page is reached for an item `items` itself
+// would filter out (a timeline/Historical-Background illustration), and its
+// own sub-details must still render regardless.
 const detailsByParent = computed(() => {
   const map = new Map()
-  for (const item of items.value ?? []) {
+  for (const item of itemById.value.values()) {
     if (item.type !== 'detail' || !item.parent_id) continue
     if (!map.has(item.parent_id)) map.set(item.parent_id, [])
     map.get(item.parent_id).push(item)
@@ -78,13 +81,13 @@ const thgGalleryLinks = (record) =>
            and a badge placed directly in it would stretch to the full width. -->
       <div><span class="detail-type-badge">{{ record.type }}</span></div>
       <RecordLanguages :languages="languages" :language="language" @select="select" />
-      <h1 class="detail-title" :dir="dir" v-html="mdInline(text.name ?? record.internal_name ?? record.id, glossary)"></h1>
+      <h1 class="detail-title" :dir="dir" v-html="mdInline(text.name ?? record.internal_name ?? record.id, { glossary })"></h1>
     </template>
 
     <template #holder="{ row, record }">
       <span v-html="row.html"></span>
       <div v-if="partnerRoute(record)" class="fact-link">
-        <router-link :to="partnerRoute(record)">→ {{ $t('sharinghistory.partner.about') }} {{ partnerLabel(record.partner_id) }}</router-link>
+        <router-link :to="partnerRoute(record)">→ {{ $t('partner.info.about') }} {{ labelOf('partners', record.partner_id) }}</router-link>
       </div>
     </template>
 
@@ -96,7 +99,7 @@ const thgGalleryLinks = (record) =>
           <p v-if="detailText(d, language).location" class="special-feature-meta">{{ detailText(d, language).location }}</p>
           <p v-if="detailText(d, language).dates" class="special-feature-meta">{{ detailText(d, language).dates }}</p>
           <p v-if="d.artist_names?.length" class="special-feature-meta">{{ d.artist_names.join(', ') }}</p>
-          <div v-if="detailText(d, language).description" class="mwnf-sheet__block" v-html="md(detailText(d, language).description, glossary)"></div>
+          <div v-if="detailText(d, language).description" class="mwnf-sheet__block" v-html="md(detailText(d, language).description, { glossary })"></div>
           <MediaGallery v-if="d.images?.length" :images="d.images.map((img) => ({ url: img.url, alt: img.captions?.[language] ?? '' }))" variant="row" />
         </div>
       </SheetSection>

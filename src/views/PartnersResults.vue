@@ -5,8 +5,7 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 
 const {
   partners,
-  countryLabel,
-  partnerLabel,
+  labelOf,
   tr,
 } = useInventoryData()
 const { t } = useI18n()
@@ -38,9 +37,9 @@ const groupedByCountry = computed(() => {
   return [...countries.entries()]
     .map(([countryId, group]) => ({
       countryId,
-      name: countryId ? countryLabel(countryId) : t('sharinghistory.results.otherCountry'),
-      main: group.main.sort((a, b) => partnerLabel(a.id).localeCompare(partnerLabel(b.id))),
-      associated: group.associated.sort((a, b) => partnerLabel(a.id).localeCompare(partnerLabel(b.id))),
+      name: countryId ? labelOf('countries', countryId) : t('sharinghistory.results.otherCountry'),
+      main: group.main.sort((a, b) => labelOf('partners', a.id).localeCompare(labelOf('partners', b.id))),
+      associated: group.associated.sort((a, b) => labelOf('partners', a.id).localeCompare(labelOf('partners', b.id))),
     }))
     .sort((a, b) => a.name.localeCompare(b.name))
 })
@@ -56,13 +55,13 @@ function partnerLink(partner) {
 // Legacy pm_partner_list.php prints "Name, City" per row.
 function partnerRowLabel(partner) {
   const city = tr('partners', partner.id)?.city
-  return city ? `${partnerLabel(partner.id)}, ${city}` : partnerLabel(partner.id)
+  return city ? `${labelOf('partners', partner.id)}, ${city}` : labelOf('partners', partner.id)
 }
 </script>
 
 <template>
   <div>
-    <RouterLink to="/partners" class="back-link">‹ {{ $t('sharinghistory.partner.backLink') }}</RouterLink>
+    <RouterLink to="/partners" class="back-link">‹ {{ $t('partner.nav.back') }}</RouterLink>
 
     <h1 class="section-heading">
       {{ $t('sharinghistory.nav.partners') }}
@@ -88,7 +87,7 @@ function partnerRowLabel(partner) {
             </div>
 
             <div v-if="group.associated.length" class="partner-col associated-col">
-              <p class="associated-label">{{ $t('sharinghistory.partner.associatedPartners') }}</p>
+              <p class="associated-label">{{ $t('partner.list.associated') }}</p>
               <p v-for="p in group.associated" :key="p.id">
                 <RouterLink :to="partnerLink(p)">{{ partnerRowLabel(p) }}</RouterLink>
               </p>

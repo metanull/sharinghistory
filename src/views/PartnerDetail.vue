@@ -12,7 +12,7 @@ const {
   items,
   availableLanguages,
   defaultLang,
-  countryLabel,
+  labelOf,
   md,
   mdInline,
   tr,
@@ -54,8 +54,8 @@ const viewItemsLabel = computed(() =>
 // its own text entry rather than being printed as-is.
 const partnerTypeLabel = computed(() =>
   partner.value?.type === 'institution'
-    ? t('sharinghistory.partner.typeInstitution')
-    : t('sharinghistory.partner.typeMuseum')
+    ? t('partner.info.typeInstitution')
+    : t('partner.info.typeMuseum')
 )
 
 function viewItemsLink() {
@@ -109,11 +109,11 @@ function back() {
 <template>
   <div v-if="!partner" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.partner') }}</p>
-    <router-link to="/partners">← {{ $t('sharinghistory.partner.returnLink') }}</router-link>
+    <router-link to="/partners">← {{ $t('partner.nav.back') }}</router-link>
   </div>
 
   <div v-else class="detail-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.partner.backLink') }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('partner.nav.back') }}</a>
 
     <div class="detail content-box">
       <div class="detail-type-badge">{{ partnerTypeLabel }}</div>
@@ -121,7 +121,7 @@ function back() {
       <h1 class="detail-title" v-html="mdInline(text.name ?? partner.id)" />
       <h2 v-if="text.city || partner.country_id" class="detail-subtitle">
         <template v-if="text.city">{{ text.city }}<template v-if="partner.country_id">, </template></template>
-        <template v-if="partner.country_id">{{ countryLabel(partner.country_id) }}</template>
+        <template v-if="partner.country_id">{{ labelOf('countries', partner.country_id) }}</template>
       </h2>
 
       <!-- View objects / monuments -->
@@ -145,17 +145,17 @@ function back() {
 
       <!-- About -->
       <section v-if="text.description" class="content-section">
-        <h2 class="content-section-heading">{{ $t('sharinghistory.partner.about') }}</h2>
+        <h2 class="content-section-heading">{{ $t('partner.info.about') }}</h2>
         <div v-html="md(text.description)" class="prose" />
       </section>
 
       <!-- Contact -->
       <section v-if="hasContactInfo || contactPersons.length" class="content-section">
-        <h2 class="content-section-heading">{{ $t('sharinghistory.partner.contact') }}</h2>
+        <h2 class="content-section-heading">{{ $t('partner.info.contact') }}</h2>
 
         <div v-if="hasContactInfo" class="contact-block">
           <p v-if="text.address" class="contact-address">{{ text.address }}</p>
-          <p v-if="text.phone">{{ $t('sharinghistory.partner.phone') }}: {{ text.phone }}</p>
+          <p v-if="text.phone">{{ $t('partner.info.phone') }}: {{ text.phone }}</p>
           <p v-if="text.email"><a :href="`mailto:${text.email}`">{{ text.email }}</a></p>
           <p v-if="text.website">
             <a :href="normalizeUrl(text.website)" target="_blank" rel="noopener">{{ text.website }}</a>
@@ -168,15 +168,15 @@ function back() {
         <div v-for="(cp, i) in contactPersons" :key="i" class="contact-block contact-person">
           <p v-if="cp.title" class="contact-person-title">{{ cp.title }}</p>
           <p v-if="cp.name">{{ cp.name }}</p>
-          <p v-if="cp.phone">{{ $t('sharinghistory.partner.phone') }}: {{ cp.phone }}</p>
-          <p v-if="cp.fax">{{ $t('sharinghistory.partner.fax') }}: {{ cp.fax }}</p>
+          <p v-if="cp.phone">{{ $t('partner.info.phone') }}: {{ cp.phone }}</p>
+          <p v-if="cp.fax">{{ $t('partner.info.fax') }}: {{ cp.fax }}</p>
           <p v-if="cp.email"><a :href="`mailto:${cp.email}`">{{ cp.email }}</a></p>
         </div>
       </section>
 
       <!-- Logos -->
       <section v-if="partner.logos?.length" class="content-section">
-        <h2 class="content-section-heading">{{ $t('sharinghistory.partner.logo') }}</h2>
+        <h2 class="content-section-heading">{{ $t('partner.info.logo') }}</h2>
         <div class="logos">
           <img v-for="(logo, i) in partner.logos" :key="i" :src="logo.url" :alt="logo.alt_text ?? ''" class="logo-img" />
         </div>
@@ -184,8 +184,8 @@ function back() {
 
       <!-- Map -->
       <section v-if="mapEmbedUrl" class="content-section">
-        <h2 class="content-section-heading">{{ $t('sharinghistory.partner.map') }}</h2>
-        <iframe class="map-frame" :src="mapEmbedUrl" loading="lazy" :title="$t('sharinghistory.partner.mapTitle')" />
+        <h2 class="content-section-heading">{{ $t('partner.map.map') }}</h2>
+        <iframe class="map-frame" :src="mapEmbedUrl" loading="lazy" :title="$t('partner.map.onTheMap')" />
       </section>
     </div>
   </div>

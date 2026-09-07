@@ -1,28 +1,60 @@
 import { computed } from 'vue'
-import {
-  byId, entityRef, renderBlock, renderInline, renderPlain, useDataPackage,
-} from '@metanull/viewer-core'
+import { byId, useCatalogueData, useDataPackage } from '@metanull/viewer-core'
 
 // The website's records, read the one way every website reads them: through
 // viewer-core, lazily. Each entity is a shared ref that stays `null` until a
 // route declaring it in `meta.entities` brings its chunk in, so importing
 // this module loads nothing, and a page pays only for what it reads.
-// Translations are viewer-core's cache, not a second one kept here.
+// Translations are viewer-core's cache, not a second one kept here. The
+// wrapper half — `tr`, `md`/`mdInline`/`mdStrip`, `loadEnglish`, `labelOf`,
+// the visible form of an entity — is `useCatalogueData`'s; what stays here is
+// this site's own: the manifest project-key mapping, the exhibition/theme/
+// chapter tree and the Historical Background subtrees (all move to
+// `useCollectionTree` in wave H), and the raw item lookup a page reads when
+// it deliberately shows an item the visible rule below hides.
 
 const dataPackage = useDataPackage()
 const manifestData = dataPackage.manifest
 
-const items = entityRef('items')
-const countries = entityRef('countries')
-const partners = entityRef('partners')
-const timelines = entityRef('timelines')
-const timelineEvents = entityRef('timeline_events')
-const collections = entityRef('collections')
-// English is the base language of every catalogue in the platform: every list,
-// label and fallback reads it. A record the visitor reads in another language
-// is resolved on the sheet itself, by viewer-core's `useRecordLanguage`; which
-// languages the site offers is decided once, in dataset.config.js, by
-// viewer-core's `offeredLanguages` over this site's own declared list.
+// Items legacy kept only to illustrate Historical Background / timeline
+// pages (display_status 'N') are excluded from database search and Permanent
+// Collection browsing, exactly like the legacy site
+// (modules/database_results.php AND o.display_status='A'). Declared once,
+// as `visible.items`, so `items`/`catalogue.entity('items')` read it
+// automatically. Exported too (as `itemVisible`, from `useInventoryData()`):
+// viewer-core's own generic entity access — the keyword index,
+// `useFeaturedRecord`, this site's own catalogue spec's `scope` — reads the
+// raw entity by name and applies no site rule of its own, so each of those
+// needs the rule directly, the way `catalogue.js`'s `inScope` re-exports it.
+function itemVisible(item) {
+  return item.display_status !== 'N'
+}
+
+const catalogue = useCatalogueData({
+  eager: ['items', 'countries', 'partners', 'timeline_events', 'collections'],
+  visible: {
+    items: itemVisible,
+  },
+})
+catalogue.loadEnglish()
+
+const {
+  tr, md, mdInline, mdStrip, labelOf, availableLanguages, loadTranslations, translations,
+} = catalogue
+
+const items = catalogue.entity('items')
+const countries = catalogue.entity('countries')
+const partners = catalogue.entity('partners')
+const timelines = catalogue.entity('timelines')
+const timelineEvents = catalogue.entity('timeline_events')
+const collections = catalogue.entity('collections')
+
+// English is the base language of every catalogue in the platform: every
+// list, label and fallback reads it. A record the visitor reads in another
+// language is resolved on the sheet itself, by viewer-core's
+// `useRecordLanguage`; which languages the site offers is decided once, in
+// dataset.config.js, by viewer-core's `offeredLanguages` over this site's
+// own declared list.
 const defaultLang = 'en'
 
 // Legacy project key (e.g. 'ISL', 'EPM') by project UUID — manifest.json's
@@ -37,61 +69,14 @@ function itemProjectKey(item) {
   return projectKeyById.get(item.project_id) ?? null
 }
 
-// Items legacy kept only to illustrate Historical Background / timeline
-// pages (display_status 'N'): excluded from database search and Permanent
-// Collection browsing, exactly like the legacy site
-// (modules/database_results.php AND o.display_status='A').
-const publicItems = computed(() => (items.value ?? []).filter(i => i.display_status !== 'N'))
-
-// ── Translations ───────────────────────────────────────────────────────────
+// ── Raw item lookup ──────────────────────────────────────────────────────
 //
-// One file per entity per language, resolved by name through viewer-core:
-// never `import(`…${lang}…`)`, which a bundler cannot resolve statically and
-// so bundles every language of an entity eagerly. That is what made
-// islamicart's build (same pattern, larger dataset) unable to finish in CI.
-// English drives every list and label and is loaded once; another language is
-// loaded on demand by the page that reads it, and an entity not covered in
-// that language falls back to English.
-
-const { availableLanguages, loadTranslations, translations } = dataPackage
-
-/** One record's translated fields, falling back to English then to nothing. */
-function tr(entity, id, lang = defaultLang) {
-  return dataPackage.tr(entity, id, lang, defaultLang)
-}
-
-const EN_ENTITIES = ['items', 'countries', 'partners', 'timeline_events', 'collections']
-
-let englishReady = null
-function loadEnglishTranslations() {
-  if (!englishReady) {
-    englishReady = Promise.all(EN_ENTITIES.map(e => loadTranslations(e, defaultLang)))
-  }
-  return englishReady
-}
-loadEnglishTranslations()
-
-// ── Label helpers (always English) ─────────────────────────────────────────
-
-function itemLabel(item) {
-  if (!item) return ''
-  return mdStrip(tr('items', item.id).name ?? item.internal_name ?? item.id)
-}
-
-function countryLabel(countryId) {
-  if (!countryId) return ''
-  const fallback = (countries.value ?? []).find(c => c.id === countryId)
-  return mdStrip(tr('countries', countryId).name ?? fallback?.internal_name ?? countryId)
-}
-
-function partnerLabel(partnerId) {
-  if (!partnerId) return ''
-  const fallback = (partners.value ?? []).find(p => p.id === partnerId)
-  return mdStrip(tr('partners', partnerId).name ?? fallback?.id ?? partnerId)
-}
-
-// ── Lookup maps ────────────────────────────────────────────────────────────
-
+// Every item, regardless of display_status — unlike `items` above, which
+// `visible.items` narrows. A page reads this one when the item it shows is
+// exactly what display_status 'N' exists for: a timeline event's
+// illustration, an exhibition's or a Historical Background page's own
+// attached items, a monument's special-feature sub-items on its own detail
+// page.
 const itemById = byId('items')
 
 // ── Exhibitions ────────────────────────────────────────────────────────────
@@ -299,39 +284,9 @@ function chapterLinksForItem(itemId) {
   return links
 }
 
-// ── Markdown helpers ───────────────────────────────────────────────────────
-
-// Full block markdown → HTML (for prose sections)
-// Rendered by viewer-core, which escapes raw HTML instead of rendering it.
-// A data package holds Markdown — the importer converts the legacy HTML on
-// the way in — so a tag arriving in a field means that conversion missed it,
-// and it shows on the page as the characters it is. The fix belongs in the
-// importer; rendering it here would hide the one thing worth seeing, and it
-// would make a museum record the single input this site trusts with markup.
-//
-// The three renderers are viewer-core's, and there is no fourth: a website
-// neither defines a rendering rule nor imports the Markdown library.
-function md(text, glossary) {
-  if (!text) return ''
-  return renderBlock(text, { breaks: true, glossary })
-}
-
-// Inline markdown → HTML without block-level <p> wrapping (for titles, names)
-function mdInline(text, glossary) {
-  if (!text) return ''
-  return renderInline(text, { glossary })
-}
-
-// Strip all markdown to plain text (for alt attributes, search matching, etc.)
-function mdStrip(text) {
-  if (!text) return ''
-  return renderPlain(text)
-}
-
 export function useInventoryData() {
   return {
     items,
-    publicItems,
     countries,
     partners,
     timelines,
@@ -342,10 +297,8 @@ export function useInventoryData() {
     loadTranslations,
     translations,
     tr,
-    loadEnglishTranslations,
-    itemLabel,
-    countryLabel,
-    partnerLabel,
+    labelOf,
+    itemVisible,
     itemProjectKey,
     itemById,
     exhibitions,

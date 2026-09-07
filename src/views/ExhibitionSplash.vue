@@ -79,11 +79,11 @@ function back() {
 <template>
   <div v-if="!exhibition" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
-    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
+    <router-link to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
   </div>
 
   <div v-else>
-    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backLink') }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('exhibition.chapter.returnToExhibitions') }}</a>
 
     <h1 class="section-heading" v-html="mdInline(text.title ?? exhibition.internal_name)" />
 
@@ -100,7 +100,7 @@ function back() {
           class="theme-row"
           @click="$router.push(`/exhibitions/${exhibition.id}/introduction`)"
         >
-          <span class="theme-name">{{ $t('sharinghistory.exhibition.introduction') }}</span>
+          <span class="theme-name">{{ $t('exhibition.nav.introduction') }}</span>
           <span class="theme-arrow">→</span>
         </li>
         <li
@@ -137,7 +137,7 @@ function back() {
         </li>
         <li v-if="hasFurtherReading">
           <router-link :to="`/exhibitions/${exhibition.id}/further-reading`">
-            {{ $t('sharinghistory.exhibition.furtherReadingHeading') }}
+            {{ $t('exhibition.relatedCategory.furtherReading') }}
           </router-link>
         </li>
       </ul>

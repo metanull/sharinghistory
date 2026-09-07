@@ -9,7 +9,7 @@ const { t } = useI18n()
 const {
   timelines,
   timelineEvents,
-  countryLabel,
+  labelOf,
   exhibitions,
   tr,
 } = useInventoryData()
@@ -20,7 +20,7 @@ const availableCountries = computed(() => {
   const seen = new Map()
   for (const t of timelines.value) {
     if (t.country_id && !seen.has(t.country_id)) {
-      seen.set(t.country_id, { id: t.country_id, name: countryLabel(t.country_id) })
+      seen.set(t.country_id, { id: t.country_id, name: labelOf('countries', t.country_id) })
     }
   }
   return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
@@ -63,11 +63,11 @@ function search() {
   errorMessage.value = ''
 
   if (!selectedCountry.value && !(selectedBegin.value && selectedEnd.value)) {
-    errorMessage.value = t('sharinghistory.timeline.errorSelect')
+    errorMessage.value = t('timeline.form.errorSelect')
     return
   }
   if (selectedBegin.value && selectedEnd.value && Number(selectedBegin.value) >= Number(selectedEnd.value)) {
-    errorMessage.value = t('sharinghistory.timeline.errorPeriod')
+    errorMessage.value = t('timeline.form.errorPeriod')
     return
   }
 
@@ -93,8 +93,8 @@ function search() {
             <th><label for="tl-country">{{ $t('sharinghistory.filter.country') }}</label></th>
             <td>
               <select id="tl-country" v-model="selectedCountry" style="width:280px">
-                <option value="" disabled>{{ $t('sharinghistory.timeline.selectCountry') }}</option>
-                <option value="all">{{ $t('sharinghistory.timeline.allCountries') }}</option>
+                <option value="" disabled>{{ $t('timeline.form.selectCountry') }}</option>
+                <option value="all">{{ $t('timeline.form.allCountries') }}</option>
                 <option v-for="c in availableCountries" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </td>
@@ -110,20 +110,20 @@ function search() {
             </td>
           </tr>
           <tr>
-            <th><label for="tl-begin">{{ $t('sharinghistory.timeline.startDate') }}</label></th>
+            <th><label for="tl-begin">{{ $t('timeline.form.startDate') }}</label></th>
             <td>
               <select id="tl-begin" v-model="selectedBegin" style="width:160px">
-                <option value="">{{ $t('sharinghistory.filter.none') }}</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('sharinghistory.timeline.yearSuffix') }}</option>
+                <option value="">{{ $t('timeline.form.none') }}</option>
+                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('timeline.form.yearSuffix') }}</option>
               </select>
             </td>
           </tr>
           <tr>
-            <th><label for="tl-end">{{ $t('sharinghistory.timeline.endDate') }}</label></th>
+            <th><label for="tl-end">{{ $t('timeline.form.endDate') }}</label></th>
             <td>
               <select id="tl-end" v-model="selectedEnd" style="width:160px">
-                <option value="">{{ $t('sharinghistory.filter.none') }}</option>
-                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('sharinghistory.timeline.yearSuffix') }}</option>
+                <option value="">{{ $t('timeline.form.none') }}</option>
+                <option v-for="y in centuryMarks" :key="y" :value="y">{{ y }} {{ $t('timeline.form.yearSuffix') }}</option>
               </select>
             </td>
           </tr>

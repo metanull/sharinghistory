@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { I18nText, useFacets } from '@metanull/viewer-core'
 import { FacetSelect } from '@metanull/viewer-layout/content'
 import { useInventoryData } from '../composables/useInventoryData.js'
-import { FACETS, exhibitionOptions, inScope } from '../composables/catalogue.js'
+import { FACETS, exhibitionOptions } from '../composables/catalogue.js'
 
 // The Permanent Collection entrance: one filter at a time, chosen by a
 // radio, as legacy's form was (decision D2). The options are the values the
@@ -13,9 +13,11 @@ import { FACETS, exhibitionOptions, inScope } from '../composables/catalogue.js'
 // only writes the query the results page reads.
 
 const router = useRouter()
+// `items` is already the visible set — display_status 'N' items excluded,
+// declared once as `visible.items` in useInventoryData.js — so the facet
+// options here already match what the results page will show.
 const { items } = useInventoryData()
-const publicItems = computed(() => (items.value ?? []).filter(inScope))
-const options = useFacets(publicItems, FACETS)
+const options = useFacets(items, FACETS)
 const themes = computed(() => exhibitionOptions())
 
 const filterType = ref('country') // country | theme | partner | begin | end
@@ -77,7 +79,7 @@ function search() {
               v-model="selected[opt.value]"
               type="number"
               :disabled="filterType !== opt.value"
-              :placeholder="opt.value === 'begin' ? $t('sharinghistory.filter.fromYearHint') : $t('sharinghistory.filter.endDateHint')"
+              :placeholder="opt.value === 'begin' ? $t('timeline.form.fromYearHint') : $t('sharinghistory.filter.endDateHint')"
             />
           </div>
         </div>

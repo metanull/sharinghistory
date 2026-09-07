@@ -10,7 +10,7 @@ const {
   itemById,
   availableLanguages,
   defaultLang,
-  partnerLabel,
+  labelOf,
   exhibitionById,
   exhibitionThemeById,
   md,
@@ -96,7 +96,7 @@ const selectedDisplay = computed(() => {
     name: caption.name ?? t.name ?? sel.item.internal_name ?? sel.item.id,
     date: caption.date ?? t.dates ?? '',
     location: caption.location ?? t.location ?? '',
-    museum: caption.museum ?? (sel.item.partner_id ? partnerLabel(sel.item.partner_id) : ''),
+    museum: caption.museum ?? (sel.item.partner_id ? labelOf('partners', sel.item.partner_id) : ''),
     justificationCurator: just?.curator ?? caption.justification ?? '',
     justificationPartner: just?.partner ?? '',
     image: sel.item.images?.[0]?.url ?? null,
@@ -117,8 +117,8 @@ function back() {
 <template>
   <div v-if="!theme" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.theme') }}</p>
-    <router-link v-if="exhibition" :to="`/exhibitions/${exhibition.id}`">← {{ $t('sharinghistory.exhibition.returnToExhibition') }}</router-link>
-    <router-link v-else to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
+    <router-link v-if="exhibition" :to="`/exhibitions/${exhibition.id}`">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
+    <router-link v-else to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
   </div>
 
   <div v-else class="theme-wrap">
