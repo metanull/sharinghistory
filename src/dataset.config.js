@@ -175,6 +175,7 @@ export default {
       path: '/item/:id',
       name: 'item',
       component: () => import('./views/ItemDetail.vue'),
+      props: (route) => ({ id: decodeURIComponent(route.params.id) }),
       // Reached from the permanent collection, the timeline and exhibitions as
       // well as the database, but the nav's own generic search over items is
       // Database, so a record opened from any of those still highlights it.
