@@ -10,7 +10,7 @@ const {
   itemById,
   availableLanguages,
   defaultLang,
-  partnerLabel,
+  labelOf,
   exhibitionById,
   exhibitionThemeById,
   chapterById,
@@ -143,7 +143,7 @@ const selectedDisplay = computed(() => {
     name: caption.name ?? t.name ?? sel.item.internal_name ?? sel.item.id,
     date: caption.date ?? t.dates ?? '',
     location: caption.location ?? t.location ?? '',
-    museum: caption.museum ?? (sel.item.partner_id ? partnerLabel(sel.item.partner_id) : ''),
+    museum: caption.museum ?? (sel.item.partner_id ? labelOf('partners', sel.item.partner_id) : ''),
     justificationCurator: just?.curator ?? caption.justification ?? '',
     justificationPartner: just?.partner ?? '',
     image: sel.item.images?.[0]?.url ?? null,
@@ -162,7 +162,7 @@ function back() {
 <template>
   <div v-if="!chapter" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.chapter') }}</p>
-    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
+    <router-link to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
   </div>
 
   <div v-else class="chapter-wrap">
@@ -177,11 +177,11 @@ function back() {
 
       <div v-if="theme.chapters.length > 1" class="page-nav-row">
         <button class="page-nav-btn" :disabled="chapterIndex <= 0" @click="goToChapter(chapterIndex - 1)">
-          ← {{ $t('sharinghistory.exhibition.previousChapter') }}
+          ← {{ $t('exhibition.chapter.previous') }}
         </button>
         <span class="page-nav-count">{{ $t('sharinghistory.exhibition.chapter') }} {{ chapterIndex + 1 }} / {{ theme.chapters.length }}</span>
         <button class="page-nav-btn" :disabled="chapterIndex >= theme.chapters.length - 1" @click="goToChapter(chapterIndex + 1)">
-          {{ $t('sharinghistory.exhibition.nextChapter') }} →
+          {{ $t('exhibition.chapter.next') }} →
         </button>
       </div>
 
@@ -196,7 +196,7 @@ function back() {
             <div class="prose" v-html="md(chapterExtra.see_also_links)" />
           </div>
           <div v-if="chapterExtra.further_reading" class="chapter-extra">
-            <h3 class="chapter-extra-heading">{{ $t('sharinghistory.exhibition.furtherReading') }}</h3>
+            <h3 class="chapter-extra-heading">{{ $t('exhibition.relatedCategory.furtherReading') }}</h3>
             <div class="prose" v-html="md(chapterExtra.further_reading)" />
           </div>
         </div>

@@ -30,7 +30,7 @@ const rows = ref([
   { keyword: '', field: 'keyword', cond: 'AND' },
   { keyword: '', field: 'keyword', cond: 'AND' },
 ])
-const rowLabels = computed(() => [t('sharinghistory.search.keywordOne'), t('sharinghistory.search.keywordTwo'), t('sharinghistory.search.keywordThree')])
+const rowLabels = computed(() => [t('catalogue.search.keywordOne'), t('catalogue.search.keywordTwo'), t('catalogue.search.keywordThree')])
 const dateFrom = ref('')
 const dateTo = ref('')
 const searchLanguage = ref('')
@@ -62,7 +62,7 @@ function showAll() {
     <h1 class="section-heading">{{ $t('sharinghistory.nav.database') }}</h1>
 
     <div class="content-box">
-      <I18nText tag="p" class="intro-text" keypath="sharinghistory.search.intro" />
+      <I18nText tag="p" class="intro-text" keypath="catalogue.search.intro" />
 
       <form class="db-form" @submit.prevent="search">
         <table>

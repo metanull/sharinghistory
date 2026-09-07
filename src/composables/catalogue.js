@@ -13,7 +13,7 @@ import { useInventoryData } from './useInventoryData.js'
 // entrances and one results page read this one declaration.
 
 const {
-  collections, countries, countryLabel, exhibitions, exhibitionThemes, itemLabel, mdInline, mdStrip, partnerLabel,
+  collections, countries, exhibitions, exhibitionThemes, itemVisible, labelOf, mdInline, mdStrip,
   partners, tr,
 } = useInventoryData()
 
@@ -23,15 +23,13 @@ export const PAGE_SIZE = 20
 /** Decision D5: the standalone sites test overlap, tolerating a single date. */
 export const DATE_MODE = 'overlap'
 
-/**
- * Items legacy kept only to illustrate Historical Background / timeline
- * pages (display_status 'N') are excluded from database search and Permanent
- * Collection browsing, exactly like the legacy site
- * (modules/database_results.php AND o.display_status='A').
- */
-export function inScope(item) {
-  return item.display_status !== 'N'
-}
+// The predicate declared once, as `visible.items`, in useInventoryData.js —
+// re-exported under this name because viewer-core's own generic entity
+// access (the keyword index below, `useFeaturedRecord` on Home.vue, this
+// spec's own `scope`) reads the raw entity by name and applies no site rule
+// of its own, so each of those needs the rule directly rather than through
+// the composable's already-filtered `items`.
+export const inScope = itemVisible
 
 // ── The eight fields of database.php ───────────────────────────────────────
 //
@@ -61,14 +59,14 @@ export const SEARCH_FIELDS = {
 export function useSearchFields() {
   const { t } = useI18n()
   return computed(() => [
-    { value: 'keyword', label: t('sharinghistory.field.keywords') },
+    { value: 'keyword', label: t('catalogue.field.keywords') },
     { value: 'name', label: t('sheet.field.name') },
     { value: 'location', label: t('sheet.field.location') },
     { value: 'provenance', label: t('sheet.field.provenance') },
-    { value: 'patron', label: t('sharinghistory.field.patron') },
-    { value: 'artist', label: t('sharinghistory.field.artist') },
-    { value: 'material', label: t('sharinghistory.field.material') },
-    { value: 'other', label: t('sharinghistory.field.other') },
+    { value: 'patron', label: t('catalogue.field.patron') },
+    { value: 'artist', label: t('catalogue.field.artist') },
+    { value: 'material', label: t('catalogue.field.material') },
+    { value: 'other', label: t('catalogue.field.other') },
   ])
 }
 
@@ -80,12 +78,12 @@ export function useSearchFields() {
 export const FACETS = {
   country: {
     field: 'country_id',
-    label: countryLabel,
+    label: (id) => labelOf('countries', id),
     include: (id) => (countries.value ?? []).some((c) => c.id === id),
   },
   partner: {
     field: 'partner_id',
-    label: partnerLabel,
+    label: (id) => labelOf('partners', id),
     include: (id) => (partners.value ?? []).some((p) => p.id === id),
   },
 }
@@ -191,8 +189,8 @@ export const permanentCollection = {
   controls: [
     { key: 'country', label: 'catalogue.facet.country', anyLabel: 'catalogue.facet.any' },
     { key: 'partner', label: 'catalogue.facet.holdingInstitution', anyLabel: 'catalogue.facet.any' },
-    { key: 'begin', type: 'year', label: 'catalogue.facet.fromYear', placeholder: 'sharinghistory.filter.fromYearHint' },
-    { key: 'end', type: 'year', label: 'catalogue.facet.toYear', placeholder: 'sharinghistory.filter.toYearHint' },
+    { key: 'begin', type: 'year', label: 'catalogue.facet.fromYear', placeholder: 'timeline.form.fromYearHint' },
+    { key: 'end', type: 'year', label: 'catalogue.facet.toYear', placeholder: 'timeline.form.toYearHint' },
   ],
   filterMode: 'apply',
   filterTitle: 'catalogue.filter.heading',
@@ -212,12 +210,12 @@ export const permanentCollection = {
     return {
       id: item.id,
       image: item.images?.[0]?.url ?? '',
-      imageAlt: itemLabel(item),
+      imageAlt: labelOf('items', item.id),
       name: mdInline(text.name ?? item.internal_name ?? item.id),
       meta: [
-        countryLabel(item.country_id),
+        labelOf('countries', item.country_id),
         text.dates,
-        (partners.value ?? []).some((p) => p.id === item.partner_id) ? partnerLabel(item.partner_id) : '',
+        (partners.value ?? []).some((p) => p.id === item.partner_id) ? labelOf('partners', item.partner_id) : '',
       ].filter(Boolean),
       badge: item.type,
       to: { name: 'item', params: { id: item.id } },

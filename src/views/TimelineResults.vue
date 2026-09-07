@@ -11,11 +11,10 @@ const { t } = useI18n()
 const {
   timelines,
   timelineEvents,
-  countryLabel,
+  labelOf,
   md,
   exhibitions,
   itemById,
-  itemLabel,
   tr,
 } = useInventoryData()
 
@@ -71,7 +70,7 @@ const availableCountries = computed(() => {
   const seen = new Map()
   for (const t of timelines.value) {
     if (t.country_id && !seen.has(t.country_id)) {
-      seen.set(t.country_id, { id: t.country_id, name: countryLabel(t.country_id) })
+      seen.set(t.country_id, { id: t.country_id, name: labelOf('countries', t.country_id) })
     }
   }
   return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
@@ -188,7 +187,7 @@ function itemsLink(event) {
 // filter, not on a comparison against a text that changes with the language.
 const activeFilterLabel = computed(() => {
   const parts = []
-  if (filterCountry.value) parts.push(countryLabel(filterCountry.value))
+  if (filterCountry.value) parts.push(labelOf('countries', filterCountry.value))
   if (filterBegin.value) parts.push(`${t('catalogue.filter.from')} ${filterBegin.value}`)
   if (filterEnd.value) parts.push(`${t('catalogue.filter.to')} ${filterEnd.value}`)
   return parts.length ? parts.join(' — ') : null
@@ -197,7 +196,7 @@ const activeFilterLabel = computed(() => {
 
 <template>
   <div>
-    <RouterLink to="/timeline" class="back-link">‹ {{ $t('sharinghistory.timeline.backLink') }}</RouterLink>
+    <RouterLink to="/timeline" class="back-link">‹ {{ $t('timeline.nav.backLink') }}</RouterLink>
 
     <h1 class="section-heading">
       {{ $t('sharinghistory.nav.timeline') }}
@@ -227,12 +226,12 @@ const activeFilterLabel = computed(() => {
 
       <div class="filter-row">
         <label>{{ $t('catalogue.facet.fromYear') }}</label>
-        <input type="number" v-model="filterBegin" :placeholder="$t('sharinghistory.filter.fromYearHint')" style="width:100px" />
+        <input type="number" v-model="filterBegin" :placeholder="$t('timeline.form.fromYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-row">
         <label>{{ $t('catalogue.facet.toYear') }}</label>
-        <input type="number" v-model="filterEnd" :placeholder="$t('sharinghistory.filter.toYearHint')" style="width:100px" />
+        <input type="number" v-model="filterEnd" :placeholder="$t('timeline.form.toYearHint')" style="width:100px" />
       </div>
 
       <div class="filter-actions">
@@ -244,7 +243,7 @@ const activeFilterLabel = computed(() => {
     <!-- Results -->
     <div class="content-box">
       <p class="result-count">
-        {{ $t('sharinghistory.results.eventsFound') }}: {{ filteredEvents.length }}
+        {{ $t('timeline.results.eventsFound') }}: {{ filteredEvents.length }}
       </p>
 
       <ul v-if="pagedEvents.length" class="timeline-list">
@@ -252,7 +251,7 @@ const activeFilterLabel = computed(() => {
           <div class="timeline-date">{{ dateRangeLabel(event) }}</div>
           <div class="timeline-body">
             <div class="timeline-country">
-              {{ countryLabel(event.country_id) }}<span v-if="eventThemeLabel(event)"> | {{ eventThemeLabel(event) }}</span>
+              {{ labelOf('countries', event.country_id) }}<span v-if="eventThemeLabel(event)"> | {{ eventThemeLabel(event) }}</span>
             </div>
             <div
               class="timeline-description"
@@ -274,22 +273,22 @@ const activeFilterLabel = computed(() => {
                 :to="`/item/${encodeURIComponent(item.id)}`"
                 class="timeline-media-item"
               >
-                <img v-if="item.images?.length" :src="item.images[0].url" :alt="itemLabel(item)" loading="lazy" />
+                <img v-if="item.images?.length" :src="item.images[0].url" :alt="labelOf('items', item.id)" loading="lazy" />
                 <span class="timeline-media-caption">
-                  {{ itemLabel(item) }}
+                  {{ labelOf('items', item.id) }}
                   <span class="timeline-media-see">{{ $t('sharinghistory.action.seeDatabaseEntry') }} →</span>
                 </span>
               </RouterLink>
             </div>
 
             <RouterLink :to="itemsLink(event)" class="timeline-items-link">
-              {{ $t('sharinghistory.action.viewItemsFromPeriod') }} →
+              {{ $t('timeline.action.viewItemsFromPeriod') }} →
             </RouterLink>
           </div>
         </li>
       </ul>
 
-      <p v-else class="no-results">{{ $t('sharinghistory.results.noEvents') }}</p>
+      <p v-else class="no-results">{{ $t('timeline.results.noEvents') }}</p>
 
       <Pagination :page-info="pageInfo" :window="7" @navigate="goToPage" />
     </div>

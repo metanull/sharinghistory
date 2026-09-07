@@ -1,4 +1,4 @@
-import { languageLabels, offeredLanguages, useDataPackage } from '@metanull/viewer-core'
+import { languageLabels, offeredLanguages, sectionMeta, useDataPackage } from '@metanull/viewer-core'
 import SiteShell from './SiteShell.vue'
 import { OFFERED_LANGUAGES } from './languages.js'
 
@@ -17,8 +17,10 @@ const languages = offeredLanguages({ declared: OFFERED_LANGUAGES })
 
 // Every route says which section it belongs to, and the shell reads that
 // (viewer-core's `useSection`) for the active menu entry rather than
-// deriving it from the path.
-const meta = (section, entities) => ({ section, entities })
+// deriving it from the path. No entity is common to every route here (the
+// entrance pages before a results page load none at all), so there is no
+// `chrome` to declare.
+const meta = sectionMeta()
 
 export default {
   // The dataset package this website renders. Must match the alias in
@@ -61,115 +63,115 @@ export default {
       path: '/',
       name: 'home',
       component: () => import('./views/Home.vue'),
-      meta: meta('home', ['items']),
+      meta: meta('home', 'items'),
     },
     {
       path: '/permanent-collection',
       name: 'permanent-collection',
       component: () => import('./views/PcEntrance.vue'),
-      meta: meta('permanent-collection', ['items', 'countries', 'partners', 'collections']),
+      meta: meta('permanent-collection', 'items', 'countries', 'partners', 'collections'),
     },
     {
       path: '/permanent-collection/results',
       name: 'permanent-collection-results',
       component: () => import('./views/PcList.vue'),
-      meta: meta('permanent-collection', ['items', 'countries', 'partners', 'collections']),
+      meta: meta('permanent-collection', 'items', 'countries', 'partners', 'collections'),
     },
     {
       path: '/database',
       name: 'database',
       component: () => import('./views/Database.vue'),
-      meta: meta('database', []),
+      meta: meta('database'),
     },
     {
       path: '/database/results',
       name: 'database-results',
       component: () => import('./views/DatabaseResults.vue'),
-      meta: meta('database', ['items', 'countries']),
+      meta: meta('database', 'items', 'countries'),
     },
     {
       path: '/timeline',
       name: 'timeline',
       component: () => import('./views/TimelineEntrance.vue'),
-      meta: meta('timeline', ['timelines', 'timeline_events', 'countries', 'collections']),
+      meta: meta('timeline', 'timelines', 'timeline_events', 'countries', 'collections'),
     },
     {
       path: '/timeline/results',
       name: 'timeline-results',
       component: () => import('./views/TimelineResults.vue'),
-      meta: meta('timeline', ['timelines', 'timeline_events', 'countries', 'collections', 'items']),
+      meta: meta('timeline', 'timelines', 'timeline_events', 'countries', 'collections', 'items'),
     },
     {
       path: '/partners',
       name: 'partners',
       component: () => import('./views/PartnersEntrance.vue'),
-      meta: meta('partners', []),
+      meta: meta('partners'),
     },
     {
       path: '/partners/results',
       name: 'partners-results',
       component: () => import('./views/PartnersResults.vue'),
-      meta: meta('partners', ['partners', 'countries']),
+      meta: meta('partners', 'partners', 'countries'),
     },
     {
       path: '/partner/:id',
       name: 'partner',
       component: () => import('./views/PartnerDetail.vue'),
-      meta: meta('partners', ['partners', 'items', 'countries']),
+      meta: meta('partners', 'partners', 'items', 'countries'),
     },
     {
       path: '/exhibitions',
       name: 'exhibitions',
       component: () => import('./views/ExhibitionsEntrance.vue'),
-      meta: meta('exhibitions', ['collections']),
+      meta: meta('exhibitions', 'collections'),
     },
     {
       path: '/exhibitions/:exhibitionId',
       name: 'exhibition',
       component: () => import('./views/ExhibitionSplash.vue'),
-      meta: meta('exhibitions', ['collections', 'timelines']),
+      meta: meta('exhibitions', 'collections', 'timelines'),
     },
     {
       path: '/exhibitions/:exhibitionId/introduction',
       name: 'exhibition-introduction',
       component: () => import('./views/ExhibitionIntroduction.vue'),
-      meta: meta('exhibitions', ['collections', 'items', 'partners', 'timelines']),
+      meta: meta('exhibitions', 'collections', 'items', 'partners', 'timelines'),
     },
     {
       path: '/exhibitions/:exhibitionId/further-reading',
       name: 'exhibition-further-reading',
       component: () => import('./views/ExhibitionFurtherReading.vue'),
-      meta: meta('exhibitions', ['collections']),
+      meta: meta('exhibitions', 'collections'),
     },
     {
       path: '/exhibitions/:exhibitionId/theme/:themeId',
       name: 'exhibition-theme',
       component: () => import('./views/ExhibitionTheme.vue'),
-      meta: meta('exhibitions', ['collections', 'items', 'partners']),
+      meta: meta('exhibitions', 'collections', 'items', 'partners'),
     },
     {
       path: '/exhibitions/:exhibitionId/theme/:themeId/chapter/:chapterId',
       name: 'exhibition-chapter',
       component: () => import('./views/ExhibitionChapter.vue'),
-      meta: meta('exhibitions', ['collections', 'items', 'partners']),
+      meta: meta('exhibitions', 'collections', 'items', 'partners'),
     },
     {
       path: '/historical-background',
       name: 'historical-background',
       component: () => import('./views/HistoricalBackground.vue'),
-      meta: meta('historical-background', ['collections', 'countries']),
+      meta: meta('historical-background', 'collections', 'countries'),
     },
     {
       path: '/historical-profiles',
       name: 'historical-profiles',
       component: () => import('./views/HistoricalProfiles.vue'),
-      meta: meta('historical-profiles', ['collections', 'countries']),
+      meta: meta('historical-profiles', 'collections', 'countries'),
     },
     {
       path: '/historical-profiles/:recordId',
       name: 'historical-profile',
       component: () => import('./views/HistoricalBackgroundCountry.vue'),
-      meta: meta('historical-profiles', ['collections', 'items', 'countries']),
+      meta: meta('historical-profiles', 'collections', 'items', 'countries'),
     },
     {
       path: '/item/:id',
@@ -179,7 +181,7 @@ export default {
       // Reached from the permanent collection, the timeline and exhibitions as
       // well as the database, but the nav's own generic search over items is
       // Database, so a record opened from any of those still highlights it.
-      meta: meta('database', ['items', 'partners', 'countries', 'collections']),
+      meta: meta('database', 'items', 'partners', 'countries', 'collections'),
     },
   ],
 

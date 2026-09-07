@@ -8,7 +8,7 @@ const route = useRoute()
 const router = useRouter()
 const {
   itemById,
-  partnerLabel,
+  labelOf,
   availableLanguages,
   defaultLang,
   exhibitionById,
@@ -83,7 +83,7 @@ const introItems = computed(() => {
         date: caption.date ?? t.dates ?? '',
         dynasty: caption.dynasty ?? '',
         location: caption.location ?? t.location ?? '',
-        museum: caption.museum ?? (item.partner_id ? partnerLabel(item.partner_id) : ''),
+        museum: caption.museum ?? (item.partner_id ? labelOf('partners', item.partner_id) : ''),
       }
     })
 })
@@ -102,14 +102,14 @@ function back() {
 <template>
   <div v-if="!exhibition" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
-    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
+    <router-link to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
   </div>
 
   <div v-else class="intro-wrap">
     <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ text.title ?? exhibition.internal_name }}</a>
 
     <div class="content-box">
-      <h1 class="intro-title" v-html="mdInline(text.extra?.intro_header ?? $t('sharinghistory.exhibition.introduction'))" />
+      <h1 class="intro-title" v-html="mdInline(text.extra?.intro_header ?? $t('exhibition.nav.introduction'))" />
 
       <div class="intro-grid">
         <div class="intro-text-col">
@@ -152,7 +152,7 @@ function back() {
           </li>
           <li v-if="hasFurtherReading">
             <RouterLink :to="`/exhibitions/${exhibition.id}/further-reading`">
-              {{ $t('sharinghistory.exhibition.furtherReadingHeading') }}
+              {{ $t('exhibition.relatedCategory.furtherReading') }}
             </RouterLink>
           </li>
         </ul>

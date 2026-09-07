@@ -5,7 +5,7 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 
 const {
   historicalBackgroundProfiles,
-  countryLabel,
+  labelOf,
   mdInline,
   tr,
 } = useInventoryData()
@@ -13,7 +13,7 @@ const {
 // Country profiles, alphabetical by English country name (legacy nav order).
 const profiles = computed(() =>
   [...historicalBackgroundProfiles.value].sort((a, b) =>
-    countryLabel(a.country_id).localeCompare(countryLabel(b.country_id))
+    labelOf('countries', a.country_id).localeCompare(labelOf('countries', b.country_id))
   )
 )
 
@@ -36,12 +36,12 @@ function profileTitle(record) {
         <img
           v-if="record.images?.length"
           :src="record.images[0].url"
-          :alt="countryLabel(record.country_id)"
+          :alt="labelOf('countries', record.country_id)"
           class="hb-country-img"
           loading="lazy"
         />
         <div v-else class="hb-country-img hb-country-img-placeholder" />
-        <span class="hb-country-name">{{ countryLabel(record.country_id) }}</span>
+        <span class="hb-country-name">{{ labelOf('countries', record.country_id) }}</span>
         <span class="hb-country-title" v-html="mdInline(profileTitle(record))" />
       </RouterLink>
     </div>

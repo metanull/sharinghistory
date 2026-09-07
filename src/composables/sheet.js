@@ -10,11 +10,11 @@ import { useInventoryData } from './useInventoryData.js'
 // names. Every label is an entry name, written out so the check that every
 // name resolves can read it.
 
-const { countryLabel } = useInventoryData()
+const { labelOf } = useInventoryData()
 
 // Legacy shows "City, Country", not the bare city the translation holds.
 function locationWithCountry(c) {
-  return [c.text.location, countryLabel(c.record.country_id)].filter(Boolean).join(', ')
+  return [c.text.location, labelOf('countries', c.record.country_id)].filter(Boolean).join(', ')
 }
 
 // The "Author" line is the artwork's creator with life dates ("Wolffgang

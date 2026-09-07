@@ -12,7 +12,7 @@ import { DATE_MODE, PAGE_SIZE, SEARCH_FIELDS, inScope, useSearchFields } from '.
 // the refine row legacy offered under the summary.
 
 const { t } = useI18n()
-const { countryLabel, itemLabel, loadTranslations, mdInline, tr } = useInventoryData()
+const { labelOf, loadTranslations, mdInline, tr } = useInventoryData()
 const fieldOptions = useSearchFields()
 
 // keyword1..3 and their fields come from the search form; keyword4 is the
@@ -51,9 +51,9 @@ const rows = computed(() =>
     return {
       id: item.id,
       image: item.images?.[0]?.url ?? '',
-      imageAlt: itemLabel(item),
+      imageAlt: labelOf('items', item.id),
       name: mdInline(text.name ?? item.internal_name ?? item.id),
-      meta: [countryLabel(item.country_id), text.dates, text.location].filter(Boolean),
+      meta: [labelOf('countries', item.country_id), text.dates, text.location].filter(Boolean),
       badge: item.type,
       to: { name: 'item', params: { id: item.id } },
     }

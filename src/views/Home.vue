@@ -11,7 +11,7 @@ import { inScope } from '../composables/catalogue.js'
 // every name resolves can read it.
 
 const { t } = useI18n()
-const { itemLabel, mdInline, tr } = useInventoryData()
+const { labelOf, mdInline, tr } = useInventoryData()
 
 const cards = computed(() => [
   { title: t('sharinghistory.nav.permanentCollection'), description: t('sharinghistory.home.permanentCollectionText'), action: t('core.action.browse'), to: { name: 'permanent-collection' } },
@@ -44,7 +44,7 @@ const featuredText = computed(() => (featured.value ? tr('items', featured.value
       class="content-box"
       :heading="$t('sharinghistory.home.itemOnDisplay')"
       :image="featured.images?.[0]?.url ?? ''"
-      :image-alt="itemLabel(featured)"
+      :image-alt="labelOf('items', featured.id)"
       :eyebrow="featured.type"
       :name="mdInline(featuredText.name ?? featured.internal_name ?? featured.id)"
       :meta="[featuredText.location, featuredText.dates].filter(Boolean)"

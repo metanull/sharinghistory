@@ -7,7 +7,7 @@ const {
   hbGeneralPerspectives,
   hbGeneralTopics,
   historicalBackgroundProfiles,
-  countryLabel,
+  labelOf,
   md,
   mdInline,
   tr,
@@ -43,7 +43,7 @@ const topics = computed(() =>
 // to each country's Historical Profile and Political Context timeline.
 const insightCountries = computed(() =>
   [...historicalBackgroundProfiles.value]
-    .map(r => ({ record: r, name: countryLabel(r.country_id) }))
+    .map(r => ({ record: r, name: labelOf('countries', r.country_id) }))
     .sort((a, b) => a.name.localeCompare(b.name))
 )
 </script>

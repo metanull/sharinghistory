@@ -16,7 +16,7 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 // and no other website does.
 
 const { t } = useI18n()
-const { countryLabel, partnerLabel } = useInventoryData()
+const { labelOf } = useInventoryData()
 
 const exhibitions = computed(() => exhibitionOptions())
 
@@ -39,11 +39,11 @@ function chooseTheme(filters, value) {
 // exhibition.
 function activeFilterLabel(filters) {
   const parts = []
-  if (filters.country) parts.push(countryLabel(filters.country))
+  if (filters.country) parts.push(labelOf('countries', filters.country))
   const scopeId = filters.chapter || filters.theme || filters.exhibition
   const scope = scopeId ? collectionById(scopeId) : null
   if (scope) parts.push(collectionTitle(scope))
-  if (filters.partner) parts.push(partnerLabel(filters.partner))
+  if (filters.partner) parts.push(labelOf('partners', filters.partner))
   if (filters.begin) parts.push(`${t('catalogue.filter.from')} ${filters.begin}`)
   if (filters.end) parts.push(`${t('catalogue.filter.upTo')} ${filters.end}`)
   return parts.length ? parts.join(' — ') : null
