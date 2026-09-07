@@ -9,9 +9,10 @@ import { exhibitionAncestry, exhibitionTree } from './exhibitions.js'
 // Translations are viewer-core's cache, not a second one kept here. The
 // wrapper half — `tr`, `md`/`mdInline`/`mdStrip`, `loadEnglish`, `labelOf`,
 // the visible form of an entity — is `useCatalogueData`'s; what stays here is
-// this site's own: the manifest project-key mapping, the exhibition/theme/
-// chapter tree and the Historical Background subtrees (all move to
-// `useCollectionTree` in wave H), and the raw item lookup a page reads when
+// this site's own: the manifest project-key mapping, the hand-written
+// exhibition list/theme lookup the catalogue facets and timeline pages still
+// read (the six exhibition pages themselves read the `useCollectionTree`
+// form in exhibitions.js instead), and the raw item lookup a page reads when
 // it deliberately shows an item the visible rule below hides.
 
 const dataPackage = useDataPackage()
@@ -27,6 +28,10 @@ const manifestData = dataPackage.manifest
 // `useFeaturedRecord`, this site's own catalogue spec's `scope` — reads the
 // raw entity by name and applies no site rule of its own, so each of those
 // needs the rule directly, the way `catalogue.js`'s `inScope` re-exports it.
+//
+// The Historical Background/Profiles subtrees this file used to walk by
+// hand now live in composables/history.js, over `useCollectionTree` —
+// #39, following the exhibition tree's own move in #37/#38.
 function itemVisible(item) {
   return item.display_status !== 'N'
 }
@@ -75,8 +80,7 @@ function itemProjectKey(item) {
 // Every item, regardless of display_status — unlike `items` above, which
 // `visible.items` narrows. A page reads this one when the item it shows is
 // exactly what display_status 'N' exists for: a timeline event's
-// illustration, an exhibition's or a Historical Background page's own
-// attached items, a monument's special-feature sub-items on its own detail
+// illustration, a monument's special-feature sub-items on its own detail
 // page.
 const itemById = byId('items')
 
@@ -126,66 +130,6 @@ function exhibitionThemes(exhibitionId) {
         .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999)),
     }))
 }
-
-// ── Historical Background ──────────────────────────────────────────────────
-//
-// SH-only: per-country multi-page illustrated essays (+ historical maps),
-// plus one "general text" record (country_id null). Imported as regular
-// collections under a per-project "Historical Profiles" marker (purpose
-// "historical-profiles-root", created by the importer's
-// sh-historical-profiles-root step, #1505); each record's pages are its
-// child collections.
-
-const historicalBackgroundRecords = computed(() => {
-  const marker = findByPurpose('historical-profiles-root')
-  if (!marker) return []
-  return (collections.value ?? [])
-    .filter(c => c.parent_id === marker.id)
-    .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
-})
-
-// The project-level introduction (legacy gn='yes'), if present.
-const historicalBackgroundGeneral = computed(
-  () => historicalBackgroundRecords.value.find(r => !r.country_id) ?? null
-)
-
-// Country profiles, alphabetical by (English) country label — the view sorts.
-const historicalBackgroundProfiles = computed(() =>
-  historicalBackgroundRecords.value.filter(r => r.country_id)
-)
-
-function historicalBackgroundPages(recordId) {
-  return (collections.value ?? [])
-    .filter(c => c.parent_id === recordId)
-    .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
-}
-
-// ── General Historical Background (project-level) ──────────────────────────
-//
-// The legacy "Historical Background" nav section — distinct from the
-// per-country Historical Profiles above. Imported by the sh-hb-general
-// step (#1498) as a marker subtree (purpose "historical-background-root",
-// with a nested purpose "topics-root" marker) under the project root:
-// perspectives (Arab / Ottoman / European Perspective,
-// historical_background_pages.php) and the "Read more" topics
-// (historical_background_readmore.php — titles only; legacy never filled
-// their texts in).
-
-const hbGeneralPerspectives = computed(() => {
-  const root = findByPurpose('historical-background-root')
-  if (!root) return []
-  return (collections.value ?? [])
-    .filter(c => c.parent_id === root.id && c.purpose !== 'topics-root')
-    .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
-})
-
-const hbGeneralTopics = computed(() => {
-  const root = findByPurpose('topics-root')
-  if (!root) return []
-  return (collections.value ?? [])
-    .filter(c => c.parent_id === root.id)
-    .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
-})
 
 // ── Timelines ──────────────────────────────────────────────────────────────
 //
@@ -276,12 +220,6 @@ export function useInventoryData() {
     exhibitionThemes,
     exhibitionLinksForItem,
     chapterLinksForItem,
-    historicalBackgroundRecords,
-    historicalBackgroundGeneral,
-    historicalBackgroundProfiles,
-    historicalBackgroundPages,
-    hbGeneralPerspectives,
-    hbGeneralTopics,
     md,
     mdInline,
     mdStrip,

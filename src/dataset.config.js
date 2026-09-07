@@ -168,9 +168,19 @@ export default {
       meta: meta('historical-profiles', 'collections', 'countries'),
     },
     {
-      path: '/historical-profiles/:recordId',
+      // `:pageId` optional: a bare record address (and a bookmarked
+      // `?page=N` one, legacy's own query pagination) resolves onto the
+      // record's first page's own explicit address —
+      // HistoricalBackgroundCountry.vue does that canonicalisation, once,
+      // rather than the route itself, which cannot read the collection tree
+      // to know which page is first.
+      path: '/historical-profiles/:recordId/:pageId?',
       name: 'historical-profile',
       component: () => import('./views/HistoricalBackgroundCountry.vue'),
+      props: (route) => ({
+        recordId: decodeURIComponent(route.params.recordId),
+        pageId: route.params.pageId ? decodeURIComponent(route.params.pageId) : null,
+      }),
       meta: meta('historical-profiles', 'collections', 'items', 'countries'),
     },
     {

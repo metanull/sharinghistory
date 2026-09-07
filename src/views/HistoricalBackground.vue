@@ -1,57 +1,66 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { I18nText } from '@metanull/viewer-core'
+import { I18nText, useI18n } from '@metanull/viewer-core'
+import {
+  historicalPerspectives,
+  historicalProfileCountries,
+  historicalProfileNodeRoute,
+  historicalProfilesTree,
+  historicalTopics,
+} from '../composables/history.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
-const {
-  hbGeneralPerspectives,
-  hbGeneralTopics,
-  historicalBackgroundProfiles,
-  labelOf,
-  md,
-  mdInline,
-  tr,
-} = useInventoryData()
+// None of `TextPageView` (a single Markdown body, no slots of its own) or
+// `SectionCards` (one link per card) fits this page's three boxes: the
+// perspective tabs switch prose in place rather than navigating, the topic
+// list has nowhere to link to (legacy never filled the "read more" popup
+// text in), and the country table carries two links per row. A small
+// wrapper of its own, over the two `useCollectionTree` subtrees in
+// composables/history.js, the way ExhibitionSplash.vue is a wrapper over
+// the exhibition tree for the same reason (see the pull request
+// description).
 
-// Perspective pages (legacy historical_background_pages.php?page=N),
-// rendered as a tabbed section like the legacy landing's three links.
+const { t } = useI18n()
+const { labelOf, md, mdInline, tr } = useInventoryData()
+
 const activePerspectiveIndex = ref(0)
 
 const perspectives = computed(() =>
-  hbGeneralPerspectives.value.map(p => ({
-    ...p,
+  historicalPerspectives.value.map((p) => ({
+    id: p.id,
     title: tr('collections', p.id)?.title ?? p.internal_name,
     description: tr('collections', p.id)?.description ?? '',
-  }))
+  })),
 )
 
-const activePerspective = computed(
-  () => perspectives.value[activePerspectiveIndex.value] ?? null
-)
+const activePerspective = computed(() => perspectives.value[activePerspectiveIndex.value] ?? null)
 
-// "Read more" topics (legacy historical_background_readmore.php). Legacy
-// never filled their texts in — the popup shows the bare title — so this is
-// a plain list, exactly as much content as legacy had.
+// "Read more" topics: legacy never filled their texts in, so this stays a
+// plain list — exactly as much content as legacy had.
 const topics = computed(() =>
-  hbGeneralTopics.value.map(t => ({
-    ...t,
-    title: tr('collections', t.id)?.title ?? t.internal_name,
-  }))
+  historicalTopics.value.map((topic) => ({
+    id: topic.id,
+    title: tr('collections', topic.id)?.title ?? topic.internal_name,
+  })),
 )
 
-// Country Insight (legacy historical_background_insight.php): direct access
-// to each country's Historical Profile and Political Context timeline.
+// Country Insight: direct access to each country's Historical Profile and
+// Political Context timeline, alphabetical by (English) country name.
 const insightCountries = computed(() =>
-  [...historicalBackgroundProfiles.value]
-    .map(r => ({ record: r, name: labelOf('countries', r.country_id) }))
-    .sort((a, b) => a.name.localeCompare(b.name))
+  [...historicalProfileCountries.value]
+    .map((record) => ({
+      record,
+      name: labelOf('countries', record.country_id),
+      profileRoute: historicalProfileNodeRoute(historicalProfilesTree.children(record.id)[0] ?? record),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name)),
 )
 </script>
 
 <template>
   <div class="hb-wrap">
     <div class="content-box">
-      <h1 class="section-heading">{{ $t('sharinghistory.nav.historicalBackground') }}</h1>
+      <h1 class="section-heading">{{ t('sharinghistory.nav.historicalBackground') }}</h1>
       <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.intro" />
 
       <div v-if="perspectives.length" class="perspective-tabs">
@@ -71,31 +80,31 @@ const insightCountries = computed(() =>
     </div>
 
     <div v-if="topics.length" class="content-box">
-      <h2 class="section-heading">{{ $t('sharinghistory.action.readMore') }}</h2>
+      <h2 class="section-heading">{{ t('sharinghistory.action.readMore') }}</h2>
       <ul class="topic-list">
-        <li v-for="t in topics" :key="t.id" class="topic-row">
-          <span class="topic-name" v-html="mdInline(t.title)" />
+        <li v-for="topic in topics" :key="topic.id" class="topic-row">
+          <span class="topic-name" v-html="mdInline(topic.title)" />
         </li>
       </ul>
     </div>
 
     <div class="content-box">
-      <h2 class="section-heading">{{ $t('sharinghistory.history.countryInsight') }}</h2>
+      <h2 class="section-heading">{{ t('sharinghistory.history.countryInsight') }}</h2>
       <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.countryInsightIntro" />
       <table class="insight-table">
         <tbody>
           <tr v-for="c in insightCountries" :key="c.record.id">
             <th>{{ c.name }}</th>
             <td>
-              <RouterLink :to="`/historical-profiles/${encodeURIComponent(c.record.id)}`">
-                {{ $t('sharinghistory.related.historicalProfile') }}
+              <RouterLink :to="c.profileRoute">
+                {{ t('sharinghistory.related.historicalProfile') }}
               </RouterLink>
             </td>
             <td>
               <RouterLink
                 :to="{ path: '/timeline/results', query: { country: c.record.country_id, exhibition: 'pc' } }"
               >
-                {{ $t('sharinghistory.related.politicalContextTimeline') }}
+                {{ t('sharinghistory.related.politicalContextTimeline') }}
               </RouterLink>
             </td>
           </tr>
