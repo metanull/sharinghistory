@@ -1,9 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useI18n } from '@metanull/viewer-core'
+import { NotFoundView, useI18n } from '@metanull/viewer-core'
 import { EssayView } from '@metanull/viewer-layout/views'
-import { exhibitionNodeRoute } from '../composables/exhibitions.js'
+import { exhibitionNodeRoute, inExhibitionTree } from '../composables/exhibitions.js'
 import { exhibitionThemeSpec } from '../composables/exhibitionSpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
@@ -20,7 +20,12 @@ const { mdInline } = useInventoryData()
 </script>
 
 <template>
-  <EssayView :spec="exhibitionThemeSpec" :id="themeId">
+  <!-- EssayView resolves `id` through the tree's raw `byId`, which a National
+       Context collection matches just as a real theme would (#54) — checked
+       here rather than inside EssayView, since only this site knows which
+       ids are its own. -->
+  <NotFoundView v-if="!inExhibitionTree(themeId)" />
+  <EssayView v-else :spec="exhibitionThemeSpec" :id="themeId">
     <template #after-body="{ node, tree, tr }">
       <nav v-if="tree.children(node.id).length" class="theme-chapters" :aria-label="t('sharinghistory.exhibition.chapters')">
         <h2 class="theme-chapters__heading">{{ t('sharinghistory.exhibition.chapters') }}</h2>

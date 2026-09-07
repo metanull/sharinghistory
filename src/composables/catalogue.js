@@ -98,7 +98,14 @@ export const FACETS = {
 // National Context variants (purpose "national-context", #1505) hang under
 // exhibitions but are not part of the theme tree, so their items stay out.
 
+// National Context collections (purpose "national-context", #1505) carry no
+// title in any language — the importer writes only the internal name and the
+// country (sh-national-context-importer.ts) — because legacy never named
+// them on their own either: every list joined the country name instead
+// (class.nationalcontext.inc.php). Read through `labelOf`, not `tr(...).title`,
+// so a missing English translation still resolves.
 export function collectionTitle(collection) {
+  if (collection.purpose === 'national-context') return labelOf('countries', collection.country_id)
   return mdStrip(tr('collections', collection.id)?.title ?? collection.internal_name)
 }
 
