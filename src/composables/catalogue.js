@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useI18n } from '@metanull/viewer-core'
+import { exhibitionTree } from './exhibitions.js'
 import { useInventoryData } from './useInventoryData.js'
 
 // The catalogue spec: what this website's lists filter and search on. The
@@ -121,29 +122,17 @@ export function chapterOptions(exhibitionId, themeId) {
   return (theme?.chapters ?? []).map((chapter) => ({ value: chapter.id, label: collectionTitle(chapter) }))
 }
 
-/** Every item id attached to `collectionId` or any descendant, national context excluded. */
+/**
+ * Every item id attached to `collectionId` or any descendant, national
+ * context excluded — `exhibitionTree.itemsUnder` (exhibitions.js), which
+ * already stops at the same National Context boundary (`childType` keeps
+ * only `theme`/`subtheme` children, so a National Context sibling, type
+ * `collection`, is never walked into). Wrapped in a `Set` here only because
+ * the filter cascade below tests membership by id, not because the tree
+ * itself needs one.
+ */
 export function itemIdsUnder(collectionId) {
-  const all = collections.value ?? []
-  const byId = new Map(all.map((c) => [c.id, c]))
-  const children = new Map()
-  for (const c of all) {
-    if (!c.parent_id) continue
-    if (!children.has(c.parent_id)) children.set(c.parent_id, [])
-    children.get(c.parent_id).push(c)
-  }
-  const ids = new Set()
-  const stack = [collectionId]
-  while (stack.length) {
-    const id = stack.pop()
-    const c = byId.get(id)
-    if (!c) continue
-    for (const entry of c.items ?? []) ids.add(entry.id)
-    for (const child of children.get(id) ?? []) {
-      if (child.purpose === 'national-context') continue
-      stack.push(child.id)
-    }
-  }
-  return ids
+  return new Set(exhibitionTree.itemsUnder(collectionId))
 }
 
 export function collectionById(id) {

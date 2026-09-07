@@ -1,245 +1,35 @@
 <script setup>
-import { computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
+import { AppHyperlinks } from '@metanull/viewer-layout'
+import { EssayView } from '@metanull/viewer-layout/views'
+import { exhibitionIntroductionSpec, relatedContentLinks } from '../composables/exhibitionSpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
+// "About the Exhibition" (legacy exh_introduction.php): an `EssayView` node
+// in its own right — the exhibition collection itself — so back link,
+// title, quote/body and the item grid all come from the view's default
+// rendering; only the "Related Content" box is this site's own, in `after`.
+
 const route = useRoute()
-const router = useRouter()
-const {
-  itemById,
-  labelOf,
-  availableLanguages,
-  defaultLang,
-  exhibitionById,
-  timelines,
-  md,
-  mdInline,
-  tr,
-  loadTranslations,
-} = useInventoryData()
+const { t } = useI18n()
+const { timelines } = useInventoryData()
 
-const exhibition = computed(() => exhibitionById(decodeURIComponent(route.params.exhibitionId)) ?? null)
+const exhibitionId = computed(() => decodeURIComponent(route.params.exhibitionId))
 
-// ── Language selector (exhibition text + item captions loaded on demand) ──
-
-const { locale } = useI18n()
-const activeLang = computed(() => availableLanguages('items').includes(locale.value) ? locale.value : defaultLang)
-// Collection texts in the record language. They come through viewer-core by
-// name, like every other translation file: an interpolated
-// `import(\`…${lang}…\`)` cannot be resolved statically, so a bundler pulls
-// in every language of the entity eagerly.
-
-watch(activeLang, lang => {
-  loadTranslations('collections', lang)
-  loadTranslations('items', lang)
-}, { immediate: true })
-
-const text = computed(() => {
-  const e = exhibition.value
-  if (!e) return {}
-  // `tr` falls back to the English record when the active language has none,
-  // which this page needs: the site's language list is derived from the item
-  // translations, and the package's coverage per entity does not line up with
-  // it, so a language a visitor can pick may ship no collections file at all.
-  return tr('collections', e.id, activeLang.value)
-})
-
-// The SH importer merges the legacy sh_exhibitionnames fields (subtitle,
-// introduction, curated_by, further_reading, see_also) into the translation
-// description — there is no separate extra.intro_text like other datasets,
-// so the description IS the legacy exh_introduction.php text.
-const introText = computed(() => text.value.extra?.intro_text ?? text.value.description ?? '')
-
-// Does any timeline reference this exhibition (thematic timeline link)?
-const hasThematicTimeline = computed(() => {
-  const e = exhibition.value
-  return !!e && timelines.value.some(t => t.collection_id === e.id)
-})
-
-// Legacy per-exhibition bibliography ("Further Reading"), injected by the
-// importer into every translation's extra.bibliography (language-keyed map).
-const hasFurtherReading = computed(() => {
-  const bib = text.value.extra?.bibliography
-  return !!bib && Object.values(bib).some(entries => entries?.length)
-})
-
-// ── Introduction items: attached directly to the exhibition collection ────
-
-const introItems = computed(() => {
-  const e = exhibition.value
-  if (!e) return []
-  return (e.items ?? [])
-    .map(entry => ({ entry, item: itemById.value.get(entry.id) }))
-    .filter(({ item }) => item)
-    .sort((a, b) => (a.entry.display_order ?? 9999) - (b.entry.display_order ?? 9999))
-    .map(({ entry, item }) => {
-      const caption = entry.caption?.[activeLang.value] ?? entry.caption?.en ?? {}
-      const t = tr('items', item.id, activeLang.value) ?? {}
-      return {
-        item,
-        image: item.images?.[0]?.url ?? null,
-        name: caption.name ?? t.name ?? item.internal_name ?? item.id,
-        date: caption.date ?? t.dates ?? '',
-        dynasty: caption.dynasty ?? '',
-        location: caption.location ?? t.location ?? '',
-        museum: caption.museum ?? (item.partner_id ? labelOf('partners', item.partner_id) : ''),
-      }
-    })
-})
-
-function back() {
-  if (window.history.length > 2) {
-    router.back()
-  } else if (exhibition.value) {
-    router.push(`/exhibitions/${exhibition.value.id}`)
-  } else {
-    router.push('/exhibitions')
-  }
+function relatedLinks(node, text) {
+  const hasThematicTimeline = timelines.value.some((timeline) => timeline.collection_id === node.id)
+  const bibliography = text.extra?.bibliography
+  const hasFurtherReading = !!bibliography && Object.values(bibliography).some((entries) => entries?.length)
+  return relatedContentLinks({ exhibitionId: node.id, hasThematicTimeline, hasFurtherReading, t })
 }
 </script>
 
 <template>
-  <div v-if="!exhibition" class="content-box not-found">
-    <p>{{ $t('sharinghistory.notFound.exhibition') }}</p>
-    <router-link to="/exhibitions">← {{ $t('exhibition.chapter.returnToExhibitions') }}</router-link>
-  </div>
-
-  <div v-else class="intro-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ text.title ?? exhibition.internal_name }}</a>
-
-    <div class="content-box">
-      <h1 class="intro-title" v-html="mdInline(text.extra?.intro_header ?? $t('exhibition.nav.introduction'))" />
-
-      <div class="intro-grid">
-        <div class="intro-text-col">
-          <div v-if="introText" class="prose" v-html="md(introText)" />
-        </div>
-
-        <div v-if="introItems.length" class="intro-items-col">
-          <div v-for="i in introItems" :key="i.item.id" class="intro-item-card" @click="$router.push(`/item/${encodeURIComponent(i.item.id)}`)">
-            <div class="intro-item-img-wrap">
-              <img v-if="i.image" :src="i.image" :alt="i.name" class="intro-item-img" />
-              <div v-else class="intro-item-img-placeholder" />
-            </div>
-            <h3 class="intro-item-name" v-html="mdInline(i.name)" />
-            <p v-if="i.dynasty" class="intro-item-meta">{{ i.dynasty }}</p>
-            <p v-if="i.date" class="intro-item-meta">{{ i.date }}</p>
-            <p v-if="i.location" class="intro-item-meta">{{ i.location }}</p>
-            <p v-if="i.museum" class="intro-item-meta">{{ i.museum }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Legacy exh_introduction.php "Related Content" box -->
-      <div class="intro-related">
-        <h3 class="intro-related-heading">{{ $t('sharinghistory.related.title') }}</h3>
-        <ul class="intro-related-list">
-          <li>
-            <RouterLink :to="{ path: '/timeline/results', query: { exhibition: 'pc' } }">
-              {{ $t('sharinghistory.related.politicalContextTimeline') }}
-            </RouterLink>
-          </li>
-          <li v-if="hasThematicTimeline">
-            <RouterLink :to="{ path: '/timeline/results', query: { exhibition: exhibition.id } }">
-              {{ $t('sharinghistory.related.thematicTimeline') }}
-            </RouterLink>
-          </li>
-          <li>
-            <RouterLink :to="{ path: '/permanent-collection/results', query: { exhibition: exhibition.id } }">
-              {{ $t('sharinghistory.related.seeGalleryForTheme') }}
-            </RouterLink>
-          </li>
-          <li v-if="hasFurtherReading">
-            <RouterLink :to="`/exhibitions/${exhibition.id}/further-reading`">
-              {{ $t('exhibition.relatedCategory.furtherReading') }}
-            </RouterLink>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
+  <EssayView :spec="exhibitionIntroductionSpec" :id="exhibitionId">
+    <template #after="{ node, text }">
+      <AppHyperlinks :title="t('sharinghistory.related.title')" :links="relatedLinks(node, text)" />
+    </template>
+  </EssayView>
 </template>
-
-<style scoped>
-.not-found { color: var(--muted); font-family: 'Roboto', sans-serif; font-size: 13px; }
-
-.intro-wrap { display: flex; flex-direction: column; gap: 10px; }
-
-
-.intro-title {
-  font-size: 20px;
-  font-weight: 400;
-  color: var(--heading);
-  margin-bottom: 16px;
-  line-height: 1.3;
-  font-family: 'Roboto', sans-serif;
-}
-
-.intro-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-}
-@media (max-width: 700px) { .intro-grid { grid-template-columns: 1fr; } }
-
-.intro-text-col { min-width: 0; }
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
-.prose :deep(p:last-child) { margin-bottom: 0; }
-
-.intro-items-col { display: flex; flex-direction: column; gap: 14px; }
-.intro-item-card {
-  border: 1px solid var(--border);
-  background: var(--section-bg);
-  padding: 12px;
-  cursor: pointer;
-}
-.intro-item-card:hover .intro-item-name { color: var(--nav-active); }
-
-.intro-item-img-wrap {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: var(--tile-bg);
-  margin-bottom: 8px;
-}
-.intro-item-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.intro-item-img-placeholder { width: 100%; height: 100%; }
-
-.intro-item-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--heading);
-  margin-bottom: 4px;
-  line-height: 1.3;
-  font-family: 'Roboto', sans-serif;
-}
-.intro-item-meta {
-  font-size: 12px;
-  color: var(--muted);
-  font-family: 'Roboto', sans-serif;
-  margin-bottom: 2px;
-}
-
-.intro-related {
-  margin-top: 24px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-.intro-related-heading {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--heading);
-  margin-bottom: 6px;
-  font-family: 'Roboto', sans-serif;
-}
-.intro-related-list {
-  list-style: none;
-  font-family: 'Roboto', sans-serif;
-  font-size: 13px;
-}
-.intro-related-list li { padding: 3px 0; }
-.intro-related-list a { color: var(--nav-active); }
-</style>

@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { byId, useCatalogueData, useDataPackage } from '@metanull/viewer-core'
+import { exhibitionAncestry, exhibitionTree } from './exhibitions.js'
 
 // The website's records, read the one way every website reads them: through
 // viewer-core, lazily. Each entity is a shared ref that stays `null` until a
@@ -106,10 +107,6 @@ const exhibitions = computed(() => {
     .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999))
 })
 
-function exhibitionById(id) {
-  return exhibitions.value.find(e => e.id === id) ?? null
-}
-
 // Country-specific "National Context" variants of an exhibition
 // (purpose "national-context", type "collection") are attached under the
 // exhibition collection but are NOT themes — they carry no English
@@ -128,15 +125,6 @@ function exhibitionThemes(exhibitionId) {
         .filter(c => c.parent_id === theme.id)
         .sort((a, b) => (a.display_order ?? 9999) - (b.display_order ?? 9999)),
     }))
-}
-
-function exhibitionThemeById(exhibitionId, themeId) {
-  return exhibitionThemes(exhibitionId).find(t => t.id === themeId) ?? null
-}
-
-function chapterById(exhibitionId, themeId, chapterId) {
-  const theme = exhibitionThemeById(exhibitionId, themeId)
-  return theme?.chapters.find(c => c.id === chapterId) ?? null
 }
 
 // ── Historical Background ──────────────────────────────────────────────────
@@ -216,40 +204,26 @@ const hbGeneralTopics = computed(() => {
 // is just a client-side reverse lookup over the same data. See Epic 12 in
 // the islamicart parity backlog.
 
-function collectionsContainingItem(itemId) {
-  return (collections.value ?? []).filter(c => c.items?.some(it => it.id === itemId))
-}
-
+// The reverse lookup — which exhibitions/themes/chapters an item is
+// attached to — is now `exhibitionTree.containing(itemId)` (every collection
+// that carries the item directly, exhibition tree or not) narrowed by
+// `exhibitionAncestry`, which is `null` for a hit outside the exhibitions
+// tree (a Historical Background page can carry the same item) and the
+// node's exhibition-relative ancestry otherwise: `[]` for an item attached
+// to the exhibition itself, one theme for an item on a theme, two for an
+// item on a chapter.
 function exhibitionLinksForItem(itemId) {
-  const marker = findByPurpose('exhibitions-root')
-  if (!marker) return []
   const links = []
   const seen = new Set()
-  for (const c of collectionsContainingItem(itemId)) {
+  for (const node of exhibitionTree.containing(itemId)) {
     // SH items can be attached at three depths: to the exhibition itself
     // (rel_*_exhibitions), to a theme (rel_*_themes), or to a chapter/
     // subtheme (rel_*_subthemes — handled with chapter granularity by
     // chapterLinksForItem; collapsed to its theme here).
-    let exhibition = null
-    let themeId = null
-    if (c.parent_id === marker.id) {
-      exhibition = c
-    } else {
-      const parent = (collections.value ?? []).find(t => t.id === c.parent_id)
-      if (parent && parent.parent_id === marker.id) {
-        // c is a theme directly under an exhibition
-        exhibition = parent
-        themeId = c.id
-      } else {
-        const grandparent = parent && (collections.value ?? []).find(e => e.id === parent.parent_id)
-        if (grandparent && grandparent.parent_id === marker.id) {
-          // c is a chapter under a theme under an exhibition
-          exhibition = grandparent
-          themeId = parent.id
-        }
-      }
-    }
-    if (!exhibition) continue
+    const ancestry = exhibitionAncestry(node)
+    if (!ancestry) continue
+    const exhibition = ancestry.length === 0 ? node : ancestry[0]
+    const themeId = ancestry.length === 1 ? node.id : ancestry.length === 2 ? ancestry[1].id : null
     const key = `${exhibition.id}:${themeId ?? ''}`
     if (seen.has(key)) continue
     seen.add(key)
@@ -263,22 +237,19 @@ function exhibitionLinksForItem(itemId) {
 }
 
 // SH adds a third level: an item can also be attached to a chapter
-// (subtheme). Walk one extra parent step: chapter → theme → exhibition.
+// (subtheme), which only a two-deep ancestry (exhibition, theme) reaches.
 function chapterLinksForItem(itemId) {
-  const marker = findByPurpose('exhibitions-root')
-  if (!marker) return []
   const links = []
-  for (const c of collectionsContainingItem(itemId)) {
-    if (c.type !== 'subtheme') continue
-    const theme = (collections.value ?? []).find(t => t.id === c.parent_id)
-    const ex = theme && (collections.value ?? []).find(e => e.id === theme.parent_id)
-    if (!ex || ex.parent_id !== marker.id) continue
+  for (const node of exhibitionTree.containing(itemId)) {
+    const ancestry = exhibitionAncestry(node)
+    if (!ancestry || ancestry.length !== 2) continue
+    const [exhibition, theme] = ancestry
     links.push({
-      exhibitionId: ex.id,
+      exhibitionId: exhibition.id,
       themeId: theme.id,
-      chapterId: c.id,
-      label: tr('collections', c.id).title ?? c.internal_name,
-      exhibitionLabel: tr('collections', ex.id).title ?? ex.internal_name,
+      chapterId: node.id,
+      label: tr('collections', node.id).title ?? node.internal_name,
+      exhibitionLabel: tr('collections', exhibition.id).title ?? exhibition.internal_name,
     })
   }
   return links
@@ -302,10 +273,7 @@ export function useInventoryData() {
     itemProjectKey,
     itemById,
     exhibitions,
-    exhibitionById,
     exhibitionThemes,
-    exhibitionThemeById,
-    chapterById,
     exhibitionLinksForItem,
     chapterLinksForItem,
     historicalBackgroundRecords,
