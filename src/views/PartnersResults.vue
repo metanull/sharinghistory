@@ -52,6 +52,12 @@ const totalCount = computed(() =>
 function partnerLink(partner) {
   return { path: `/partner/${encodeURIComponent(partner.id)}` }
 }
+
+// Legacy pm_partner_list.php prints "Name, City" per row.
+function partnerRowLabel(partner) {
+  const city = tr('partners', partner.id)?.city
+  return city ? `${partnerLabel(partner.id)}, ${city}` : partnerLabel(partner.id)
+}
 </script>
 
 <template>
@@ -77,14 +83,14 @@ function partnerLink(partner) {
           <div class="country-body">
             <div class="partner-col">
               <p v-for="p in group.main" :key="p.id">
-                <RouterLink :to="partnerLink(p)">{{ partnerLabel(p.id) }}</RouterLink>
+                <RouterLink :to="partnerLink(p)">{{ partnerRowLabel(p) }}</RouterLink>
               </p>
             </div>
 
             <div v-if="group.associated.length" class="partner-col associated-col">
               <p class="associated-label">{{ $t('sharinghistory.partner.associatedPartners') }}</p>
               <p v-for="p in group.associated" :key="p.id">
-                <RouterLink :to="partnerLink(p)">{{ partnerLabel(p.id) }}</RouterLink>
+                <RouterLink :to="partnerLink(p)">{{ partnerRowLabel(p) }}</RouterLink>
               </p>
             </div>
           </div>

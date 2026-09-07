@@ -162,11 +162,11 @@ function back() {
 <template>
   <div v-if="!chapter" class="content-box not-found">
     <p>{{ $t('sharinghistory.notFound.chapter') }}</p>
-    <router-link to="/exhibitions">← Return to Exhibitions</router-link>
+    <router-link to="/exhibitions">← {{ $t('sharinghistory.exhibition.returnLink') }}</router-link>
   </div>
 
   <div v-else class="chapter-wrap">
-    <a class="back-link" href="#" @click.prevent="back">← Back to {{ resolveTitle(theme.id, theme.internal_name) }}</a>
+    <a class="back-link" href="#" @click.prevent="back">← {{ $t('sharinghistory.exhibition.backTo') }} {{ resolveTitle(theme.id, theme.internal_name) }}</a>
 
     <div class="content-box">
       <p class="chapter-crumb">
@@ -177,11 +177,11 @@ function back() {
 
       <div v-if="theme.chapters.length > 1" class="page-nav-row">
         <button class="page-nav-btn" :disabled="chapterIndex <= 0" @click="goToChapter(chapterIndex - 1)">
-          ← Previous chapter
+          ← {{ $t('sharinghistory.exhibition.previousChapter') }}
         </button>
         <span class="page-nav-count">{{ $t('sharinghistory.exhibition.chapter') }} {{ chapterIndex + 1 }} / {{ theme.chapters.length }}</span>
         <button class="page-nav-btn" :disabled="chapterIndex >= theme.chapters.length - 1" @click="goToChapter(chapterIndex + 1)">
-          Next chapter →
+          {{ $t('sharinghistory.exhibition.nextChapter') }} →
         </button>
       </div>
 

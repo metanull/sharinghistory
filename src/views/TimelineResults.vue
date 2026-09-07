@@ -141,13 +141,12 @@ function eventItems(event) {
   return (event.item_ids ?? []).map(id => itemById.value.get(id)).filter(Boolean)
 }
 
-// Legacy hcr_result.php labels every row "Country | Theme"; PC-timeline
-// events (collection_id null) are labelled "Political Context".
+// Legacy hcr_result.php labels every row "Country | Theme"; a Permanent
+// Collection timeline event has no bound collection, so the theme portion
+// resolves empty and the row shows the country alone.
 function eventThemeLabel(event) {
   const t = timelineById.value[event.timeline_id]
-  if (!t) return ''
-  if (t.collection_id === null) return 'Political Context'
-  return tr('collections', t.collection_id)?.title ?? ''
+  return t ? (tr('collections', t.collection_id)?.title ?? '') : ''
 }
 
 const pageInfo = usePagination(filteredEvents, { page: currentPage, size: PAGE_SIZE })

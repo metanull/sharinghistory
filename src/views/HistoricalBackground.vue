@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { I18nText } from '@metanull/viewer-core'
 import { useInventoryData } from '../composables/useInventoryData.js'
 
 const {
@@ -80,18 +81,14 @@ const insightCountries = computed(() =>
 
     <div class="content-box">
       <h2 class="section-heading">{{ $t('sharinghistory.history.countryInsight') }}</h2>
-      <p class="hb-intro-note">
-        This page provides direct access to information on the historical
-        background for each country. The Historical Profiles and Timeline
-        reflect the specific views of the partner concerned.
-      </p>
+      <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.countryInsightIntro" />
       <table class="insight-table">
         <tbody>
           <tr v-for="c in insightCountries" :key="c.record.id">
             <th>{{ c.name }}</th>
             <td>
               <RouterLink :to="`/historical-profiles/${encodeURIComponent(c.record.id)}`">
-                Historical Profile
+                {{ $t('sharinghistory.related.historicalProfile') }}
               </RouterLink>
             </td>
             <td>

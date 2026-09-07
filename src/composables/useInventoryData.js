@@ -222,9 +222,6 @@ const hbGeneralTopics = computed(() => {
 // exporter). The legacy timeline page filters by period × country ×
 // exhibition, with a thematic-vs-Permanent-Collection toggle.
 
-const pcTimelines = computed(() => (timelines.value ?? []).filter(t => t.collection_id === null))
-const thematicTimelines = computed(() => (timelines.value ?? []).filter(t => t.collection_id !== null))
-
 // ── Item cross-links: Artistic Introduction pages / Exhibitions that
 // feature a given item ───────────────────────────────────────────────────
 //
@@ -338,8 +335,6 @@ export function useInventoryData() {
     countries,
     partners,
     timelines,
-    pcTimelines,
-    thematicTimelines,
     timelineEvents,
     collections,
     defaultLang,
