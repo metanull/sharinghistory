@@ -24,10 +24,10 @@ function activeFilterLabel(filters) {
 </script>
 
 <template>
-  <TimelineResultsView :spec="timelineResults" class="timeline-results">
+  <TimelineResultsView :spec="timelineResults" class="mwnf-panel timeline-results">
     <template #before="{ filters }">
       <BackLink label="timeline.nav.backLink" :to="{ name: 'timeline' }" />
-      <h1 class="section-heading">
+      <h1 class="mwnf-heading">
         {{ $t('sharinghistory.nav.timeline') }}
         <span v-if="activeFilterLabel(filters)" class="heading-filter"> — {{ activeFilterLabel(filters) }}</span>
       </h1>
@@ -38,11 +38,8 @@ function activeFilterLabel(filters) {
 <style scoped>
 .heading-filter { font-weight: normal; font-size: 14px; color: var(--muted); }
 
-.timeline-results {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
-}
+/* .timeline-results carries no styles of its own now (mwnf-panel supplies
+   the box) — kept only as the :deep() scoping hook below. */
 .timeline-results :deep(.mwnf-timeline__filters) { margin-bottom: 16px; }
 
 .timeline-results :deep(.mwnf-timeline__media-item) { max-width: 320px; }

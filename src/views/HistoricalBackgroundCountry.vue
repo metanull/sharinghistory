@@ -57,18 +57,18 @@ function bibliographyMarkdown(tr, language) {
 </script>
 
 <template>
-  <div v-if="!record" class="content-box not-found">
+  <div v-if="!record" class="mwnf-panel not-found">
     <p>{{ t('sharinghistory.notFound.profile') }}</p>
     <router-link to="/historical-profiles">← {{ t('sharinghistory.profile.returnLink') }}</router-link>
   </div>
 
   <div v-else-if="activePageId" class="hb-wrap">
-    <router-link class="back-link" to="/historical-profiles">← {{ t('sharinghistory.nav.historicalProfiles') }}</router-link>
+    <router-link class="mwnf-back-bar" to="/historical-profiles">← {{ t('sharinghistory.nav.historicalProfiles') }}</router-link>
 
     <EssayView :spec="historicalBackgroundCountrySpec" :id="activePageId">
       <template #before-body="{ tr }">
         <p v-if="record.country_id" class="hb-country-tag">{{ labelOf('countries', record.country_id) }}</p>
-        <div v-if="tr('collections', record.id).description" class="prose" v-html="md(tr('collections', record.id).description)" />
+        <div v-if="tr('collections', record.id).description" class="mwnf-prose" v-html="md(tr('collections', record.id).description)" />
       </template>
 
       <template #after-body="{ node }">
@@ -101,7 +101,7 @@ function bibliographyMarkdown(tr, language) {
 
         <div v-if="bibliographyMarkdown(tr, language)" id="hb-bibliography" class="hb-bibliography">
           <h3 class="hb-item-heading">{{ t('sharinghistory.history.bibliography') }}</h3>
-          <div class="prose" v-html="md(bibliographyMarkdown(tr, language))" />
+          <div class="mwnf-prose" v-html="md(bibliographyMarkdown(tr, language))" />
         </div>
       </template>
     </EssayView>
@@ -127,9 +127,6 @@ function bibliographyMarkdown(tr, language) {
   padding: 2px 8px;
   margin-bottom: 8px;
 }
-
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
 
 .hb-image-strip {
   display: flex;

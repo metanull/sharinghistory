@@ -25,10 +25,10 @@ function activeFilterLabel(filters) {
 </script>
 
 <template>
-  <CatalogueResultsView :spec="timelineGallery" class="timeline-gallery">
+  <CatalogueResultsView :spec="timelineGallery" class="mwnf-panel">
     <template #before="{ filters }">
       <BackLink label="timeline.nav.backToEvents" :to="{ name: 'timeline-results', query: filters }" />
-      <h1 class="section-heading">
+      <h1 class="mwnf-heading">
         {{ $t('timeline.results.galleryHeading') }}
         <span v-if="activeFilterLabel(filters)" class="heading-filter"> — {{ activeFilterLabel(filters) }}</span>
       </h1>
@@ -38,10 +38,4 @@ function activeFilterLabel(filters) {
 
 <style scoped>
 .heading-filter { font-weight: normal; font-size: 14px; color: var(--muted); }
-
-.timeline-gallery {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
-}
 </style>

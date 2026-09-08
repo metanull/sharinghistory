@@ -38,3 +38,16 @@
 .mwnf-footer {
   text-align: center;
 }
+
+/* .mwnf-back-bar only colours a <button> child (its usual markup); this
+ * site's back/forward links are plain <a> elements sitting directly under
+ * the class, so the same tokens are applied to the link itself here. */
+.mwnf-back-bar {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--mwnf-back-bar-text, inherit);
+}
+.mwnf-back-bar:hover {
+  color: var(--mwnf-back-bar-hover-text, inherit);
+  text-decoration: underline;
+}

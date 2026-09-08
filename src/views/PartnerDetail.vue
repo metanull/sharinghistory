@@ -39,10 +39,10 @@ function contactPersons(record) {
 </script>
 
 <template>
-  <RecordView :spec="partnerSheet" :id="id" class="detail content-box">
+  <RecordView :spec="partnerSheet" :id="id" class="detail mwnf-panel">
     <template #header="{ record, text, language, languages, select, dir }">
       <div class="detail-top">
-        <a class="back-link" href="#" @click.prevent="back">← {{ $t('partner.nav.back') }}</a>
+        <a class="mwnf-back-bar" href="#" @click.prevent="back">← {{ $t('partner.nav.back') }}</a>
       </div>
       <div><span class="detail-type-badge">{{ record.type === 'institution' ? $t('partner.info.typeInstitution') : $t('partner.info.typeMuseum') }}</span></div>
       <RecordLanguages :languages="languages" :language="language" @select="select" />
@@ -53,7 +53,7 @@ function contactPersons(record) {
       </h2>
 
       <div v-if="record.item_count" class="view-items-row">
-        <RouterLink :to="viewItemsLink(record)" class="btn">{{ record.type === 'institution' ? $t('sharinghistory.action.viewMonuments') : $t('sharinghistory.action.viewObjects') }} ({{ record.item_count }}) →</RouterLink>
+        <RouterLink :to="viewItemsLink(record)" class="mwnf-button">{{ record.type === 'institution' ? $t('sharinghistory.action.viewMonuments') : $t('sharinghistory.action.viewObjects') }} ({{ record.item_count }}) →</RouterLink>
         <a v-if="text.website" :href="normalizeUrl(text.website)" target="_blank" rel="noopener" class="homepage-link">
           {{ $t('sharinghistory.action.visitWebsite') }} ↗
         </a>
@@ -87,13 +87,12 @@ function contactPersons(record) {
     </template>
 
     <template #after-sheet="{ record, text }">
+      <!-- 2.10.0's own defaults already name partner.map.map / .mapOf /
+           .openInOpenStreetMap (viewer-i18n 2.4.0). -->
       <PartnerMap
         :latitude="record.latitude"
         :longitude="record.longitude"
         :label="text.name"
-        map-title-entry="partner.map.map"
-        map-of-entry="partner.map.mapOf"
-        open-map-link-entry="exhibition.action.openInOpenStreetMap"
       />
     </template>
 

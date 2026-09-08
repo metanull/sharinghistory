@@ -1,18 +1,20 @@
 /*
- * Global styles shared by every Sharing History view: the legacy palette
- * variables the views reference, plus the shared content-box and form
- * building blocks carried over from the previous site. Lists, pagination,
- * filters and summaries are viewer-layout's, themed in theme/tokens.css.
- * Page chrome (header, nav, footer) is themed via theme/tokens.css instead.
+ * Sharing History's own palette: the legacy oxblood/red colour names other
+ * CSS (theme/tokens.css, the views' own scoped styles) reference. The
+ * building blocks this file used to duplicate — the content box, section
+ * heading, form table, buttons and back link — are now
+ * @metanull/viewer-layout's shared content classes (.mwnf-panel,
+ * .mwnf-heading, .mwnf-form-table, .mwnf-button, .mwnf-select,
+ * .mwnf-back-bar), themed through theme/tokens.css instead of duplicated
+ * here.
  */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Roboto+Condensed:ital,wght@0,300;0,400;0,700;1,400&display=swap');
 
 :root {
-  /* Text on oxblood/red surfaces */
-  --header-fg: #ffffff;
-  --nav-fg: #ffffff;
-  --nav-hover-fg: #e0b700; /* gold — legacy nav link hover */
-  --nav-active: #990000; /* hover / active emphasis on light surfaces */
+  /* Hover / active emphasis on light surfaces (buttons, result counts,
+     content links) — the header/nav chrome itself is themed via
+     theme/tokens.css. */
+  --nav-active: #990000;
 
   /* Heading & body text */
   --heading: #750101;
@@ -53,104 +55,4 @@ a {
 a:hover {
   color: var(--link-hover);
   text-decoration: underline;
-}
-
-/* ── Shared content-box ─────────────────────────────────────────────────── */
-.content-box {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
-  margin-bottom: 16px;
-}
-
-/* ── Section heading ─────────────────────────────────────────────────────── */
-.section-heading {
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--heading);
-  border-bottom: 2px solid var(--accent);
-  padding-bottom: 4px;
-  margin-bottom: 14px;
-}
-
-/* ── Form elements ──────────────────────────────────────────────────────── */
-.form-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.form-table th {
-  text-align: right;
-  padding: 6px 12px 6px 0;
-  font-weight: 500;
-  font-size: 12px;
-  color: var(--muted);
-  width: 160px;
-  vertical-align: middle;
-}
-.form-table td {
-  padding: 6px 0;
-  vertical-align: middle;
-}
-
-select,
-input[type='text'],
-input[type='number'] {
-  font-family: inherit;
-  font-size: 13px;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  background: var(--field-bg);
-  color: var(--text);
-  border-radius: 0;
-  width: auto;
-}
-select:focus,
-input:focus {
-  outline: 1px solid var(--accent);
-}
-
-.btn {
-  display: inline-block;
-  padding: 6px 18px;
-  background: var(--accent);
-  color: var(--nav-fg);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  letter-spacing: 0.03em;
-}
-.btn:hover {
-  background: var(--accent-soft);
-}
-.btn-secondary {
-  background: var(--border);
-  color: var(--text);
-}
-.btn-secondary:hover {
-  background: var(--accent-pale);
-  color: #fff;
-}
-
-/* ── Back link ──────────────────────────────────────────────────────────── */
-.back-link {
-  display: inline-block;
-  margin-bottom: 12px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.back-link:hover {
-  color: var(--nav-active);
-}
-
-.timeline-link {
-  display: inline-block;
-  margin-bottom: 12px;
-  margin-left: 16px;
-  font-size: 13px;
-  color: var(--muted);
-}
-.timeline-link:hover {
-  color: var(--nav-active);
 }

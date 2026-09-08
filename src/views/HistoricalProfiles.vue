@@ -27,8 +27,8 @@ const cards = computed(() =>
 </script>
 
 <template>
-  <div class="content-box">
-    <h1 class="section-heading">{{ t('sharinghistory.nav.historicalProfiles') }}</h1>
+  <div class="mwnf-panel">
+    <h1 class="mwnf-heading">{{ t('sharinghistory.nav.historicalProfiles') }}</h1>
     <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.profile.intro" />
     <SectionCards :cards="cards" variant="covers" />
   </div>

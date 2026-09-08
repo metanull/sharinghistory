@@ -10,9 +10,9 @@ import { timelineEntrance } from '../composables/timeline.js'
 </script>
 
 <template>
-  <TimelineResultsView :spec="timelineEntrance" class="timeline-entrance">
+  <TimelineResultsView :spec="timelineEntrance" class="mwnf-panel">
     <template #before>
-      <h1 class="section-heading">{{ $t('sharinghistory.nav.timeline') }}</h1>
+      <h1 class="mwnf-heading">{{ $t('sharinghistory.nav.timeline') }}</h1>
       <I18nText tag="p" class="intro-text" keypath="sharinghistory.timeline.intro" />
     </template>
   </TimelineResultsView>
@@ -25,11 +25,5 @@ import { timelineEntrance } from '../composables/timeline.js'
   color: var(--muted);
   margin-bottom: 16px;
   font-family: 'Roboto', sans-serif;
-}
-
-.timeline-entrance {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
 }
 </style>

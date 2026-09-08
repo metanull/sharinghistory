@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createViewer, loadEntities, mergeMessages, useDataPackage } from '@metanull/viewer-core'
-import { checkOfferedLanguages } from '@metanull/viewer-core/testing'
+import { loadEntities, mergeMessages, useDataPackage } from '@metanull/viewer-core'
+import {
+  checkOfferedLanguages, checkRoutes, checkSectionMeta, checkTextsRendered, mountSite,
+} from '@metanull/viewer-core/testing'
 import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
 import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
@@ -20,19 +22,9 @@ import { useInventoryData } from '../src/composables/useInventoryData.js'
 // nothing about the chrome — every text would render as its own name.
 const messages = mergeMessages(sharedTexts, { en: ownTexts })
 
-async function mountSite(hash = '#/') {
-  window.location.hash = hash
-  const app = createViewer({ ...config, messages })
-  const host = document.createElement('div')
-  document.body.appendChild(host)
-  app.mount(host)
-  await app.config.globalProperties.$router.isReady()
-  return { app, host }
-}
-
 describe('website smoke test', () => {
   it('mounts against the configured data package', async () => {
-    const { app, host } = await mountSite()
+    const { app, host } = await mountSite(config, messages)
 
     // The site name comes from the package alone, which is the rule. This
     // package's English name is the project's full title with its subtitle,
@@ -57,11 +49,11 @@ describe('website smoke test', () => {
   // the catalogue spec in composables/catalogue.js, the exhibition cascade
   // and the heading from PcList.vue's slots.
   it('renders the Permanent Collection on the composed results view', async () => {
-    const { app, host } = await mountSite('#/permanent-collection/results')
+    const { app, host } = await mountSite(config, messages, '#/permanent-collection/results')
     await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
     expect(host.querySelector('.mwnf-catalogue')).not.toBeNull()
     expect(host.querySelector('.mwnf-filter')).not.toBeNull()
-    expect(host.querySelector('.section-heading').textContent).toContain('Permanent Collection')
+    expect(host.querySelector('.mwnf-heading').textContent).toContain('Permanent Collection')
     // Legacy's count, in its two halves ("N objects", "M monuments").
     expect(host.querySelectorAll('.mwnf-summary__count').length).toBe(2)
     app.unmount()
@@ -77,7 +69,7 @@ describe('website smoke test', () => {
     const exhibition = collections.find((c) => c.parent_id === marker.id)
     const scopedIds = itemIdsUnder(exhibition.id)
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/permanent-collection/results?exhibition=${encodeURIComponent(exhibition.id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
@@ -112,7 +104,7 @@ describe('website smoke test', () => {
     expect(fixture, 'fixture: a theme with its own items').not.toBeNull()
     const { exhibition, theme } = fixture
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/exhibitions/${encodeURIComponent(exhibition.id)}/theme/${encodeURIComponent(theme.id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
@@ -159,7 +151,7 @@ describe('website smoke test', () => {
     const fixture = findJustifiedChapter()
     expect(fixture, 'fixture: a chapter with a curator/partner justification').not.toBeNull()
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/exhibitions/${encodeURIComponent(fixture.exhibition.id)}/theme/${encodeURIComponent(fixture.theme.id)}/chapter/${encodeURIComponent(fixture.chapter.id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
@@ -202,7 +194,7 @@ describe('website smoke test', () => {
     }
     expect(fixture, 'fixture: a multi-chapter theme with a following sibling theme').not.toBeNull()
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/exhibitions/${encodeURIComponent(fixture.exhibition.id)}/theme/${encodeURIComponent(fixture.theme.id)}/chapter/${encodeURIComponent(fixture.lastChapter.id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
@@ -225,7 +217,7 @@ describe('website smoke test', () => {
     const exhibition = collections.find((c) => c.id === nc.parent_id)
     expect(exhibition, 'fixture: the National Context collection\'s own exhibition').toBeDefined()
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/exhibitions/${encodeURIComponent(exhibition.id)}/theme/${encodeURIComponent(nc.id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.vc-not-found')).not.toBeNull(), { timeout: 20000 })
@@ -274,7 +266,7 @@ describe('website smoke test', () => {
   // (composables/historySpecs.js) — #39, following the exhibition tree's own
   // move in #37/#38.
   it('renders the Historical Background page as its own wrapper, over both subtrees', async () => {
-    const { app, host } = await mountSite('#/historical-background')
+    const { app, host } = await mountSite(config, messages, '#/historical-background')
     await vi.waitFor(() => expect(host.querySelector('.perspective-tabs')).not.toBeNull(), { timeout: 20000 })
     expect(host.querySelector('.topic-list')).not.toBeNull()
     expect(host.querySelector('.insight-table')).not.toBeNull()
@@ -282,7 +274,7 @@ describe('website smoke test', () => {
   }, 60000)
 
   it('renders the Historical Profiles list on SectionCards', async () => {
-    const { app, host } = await mountSite('#/historical-profiles')
+    const { app, host } = await mountSite(config, messages, '#/historical-profiles')
     await vi.waitFor(() => expect(host.querySelector('.mwnf-cards__card')).not.toBeNull(), { timeout: 20000 })
     expect(host.querySelector('.mwnf-cards--covers')).not.toBeNull()
     app.unmount()
@@ -306,7 +298,7 @@ describe('website smoke test', () => {
     const fixture = findProfileWithPages()
     expect(fixture, 'fixture: a country record with more than one page').not.toBeNull()
 
-    const { app, host } = await mountSite(`#/historical-profiles/${encodeURIComponent(fixture.record.id)}`)
+    const { app, host } = await mountSite(config, messages, `#/historical-profiles/${encodeURIComponent(fixture.record.id)}`)
     await vi.waitFor(() => expect(host.querySelector('.mwnf-essay')).not.toBeNull(), { timeout: 20000 })
 
     // The redirect (`router.replace`) lands on the record's own first page,
@@ -346,7 +338,7 @@ describe('website smoke test', () => {
     const exhibition = exhibitionTree.children(root.id)[0]
     expect(exhibition, 'fixture: an exhibition').toBeDefined()
 
-    const { app, host } = await mountSite(`#/exhibitions/${encodeURIComponent(exhibition.id)}/further-reading`)
+    const { app, host } = await mountSite(config, messages, `#/exhibitions/${encodeURIComponent(exhibition.id)}/further-reading`)
     await vi.waitFor(() => expect(host.querySelector('.mwnf-link-list')).not.toBeNull(), { timeout: 20000 })
     // Either real entries or the view's own empty state — both are the
     // link-list shape, and the page never falls back to a hard not-found.
@@ -364,7 +356,7 @@ describe('website smoke test', () => {
     const [items, partners] = await loadEntities(['items', 'partners'])
     const partnerIds = new Set(partners.map((p) => p.id))
     const object = items.find((i) => i.type === 'object' && i.partner_id && partnerIds.has(i.partner_id)) ?? items[0]
-    const { app, host } = await mountSite(`#/item/${encodeURIComponent(object.id)}`)
+    const { app, host } = await mountSite(config, messages, `#/item/${encodeURIComponent(object.id)}`)
     await vi.waitFor(() => expect(host.querySelector('.mwnf-sheet__label')).not.toBeNull(), { timeout: 20000 })
     expect(host.querySelector('.mwnf-record')).not.toBeNull()
     expect(host.querySelector('.detail-type-badge').textContent.trim()).toBe(object.type)
@@ -394,13 +386,13 @@ describe('website smoke test', () => {
     expect(countryName, 'fixture: the timeline\'s country has an English name').toBeTruthy()
     expect(themeTitle, 'fixture: the timeline\'s exhibition has an English title').toBeTruthy()
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/timeline/results?country=${encodeURIComponent(timeline.country_id)}&collection=${encodeURIComponent(timeline.collection_id)}`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-timeline__row')).not.toBeNull(), { timeout: 20000 })
 
     // The heading names the filtered country.
-    expect(host.querySelector('.section-heading').textContent).toContain(countryName)
+    expect(host.querySelector('.mwnf-heading').textContent).toContain(countryName)
 
     // The row's own caption: "Country | Theme".
     const captions = Array.from(host.querySelectorAll('.mwnf-timeline__caption')).map((el) => el.textContent)
@@ -447,10 +439,10 @@ describe('website smoke test', () => {
     const countryName = countryTexts[countryId]?.name
     expect(countryName, 'fixture: the item\'s country has an English name').toBeTruthy()
 
-    const { app, host } = await mountSite(`#/timeline/gallery?country=${encodeURIComponent(countryId)}`)
+    const { app, host } = await mountSite(config, messages, `#/timeline/gallery?country=${encodeURIComponent(countryId)}`)
     await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
 
-    expect(host.querySelector('.section-heading').textContent).toContain(countryName)
+    expect(host.querySelector('.mwnf-heading').textContent).toContain(countryName)
     // Legacy's count, in its two halves ("N objects", "M monuments").
     expect(host.querySelectorAll('.mwnf-summary__count').length).toBe(2)
 
@@ -481,10 +473,10 @@ describe('website smoke test', () => {
     expect(countryName, 'fixture: the partner\'s country has an English name').toBeTruthy()
     const listedCount = partners.filter((p) => p.country_id && partnerTexts[p.id]?.name).length
 
-    const { app, host } = await mountSite('#/partners/results')
+    const { app, host } = await mountSite(config, messages, '#/partners/results')
     await vi.waitFor(() => expect(host.querySelector('.mwnf-partner-list__row')).not.toBeNull(), { timeout: 20000 })
 
-    expect(host.querySelector('.section-heading').textContent).toContain('Partners')
+    expect(host.querySelector('.mwnf-heading').textContent).toContain('Partners')
     // The view's own count undercounts a nested child (metanull/viewer-layout#…);
     // this site walks `groups` itself instead (PartnersResults.vue) — asserted
     // against the site's own listing rule, not the view's built-in total.
@@ -516,7 +508,7 @@ describe('website smoke test', () => {
     const heldItems = items.filter((i) => i.partner_id === fixture.id && i.display_status !== 'N')
     expect(heldItems.length, 'fixture: the partner\'s held, visible items').toBeGreaterThan(0)
 
-    const { app, host } = await mountSite(`#/partner/${encodeURIComponent(fixture.id)}`)
+    const { app, host } = await mountSite(config, messages, `#/partner/${encodeURIComponent(fixture.id)}`)
     await vi.waitFor(() => expect(host.querySelector('.mwnf-record')).not.toBeNull(), { timeout: 20000 })
 
     expect(host.querySelector('.detail-title').textContent).toContain(text.name)
@@ -525,7 +517,7 @@ describe('website smoke test', () => {
     expect(host.textContent).toContain(text.phone)
     expect(host.querySelector('.logo-img')).not.toBeNull()
 
-    const viewLink = host.querySelector('.view-items-row .btn')
+    const viewLink = host.querySelector('.view-items-row .mwnf-button')
     expect(viewLink, 'the "View Objects/Monuments" link, off item_count').not.toBeNull()
     expect(viewLink.textContent).toContain(String(fixture.item_count))
 
@@ -548,7 +540,7 @@ describe('website smoke test', () => {
   // component's; asserted here is this website's own field grammar and
   // legacy database.php's fixed century boundaries (Decision D2).
   it('renders the search entrance on the composed form view, with the field options and century dates', async () => {
-    const { app, host } = await mountSite('#/database')
+    const { app, host } = await mountSite(config, messages, '#/database')
     await vi.waitFor(() => expect(host.querySelector('.mwnf-search-form')).not.toBeNull(), { timeout: 20000 })
 
     expect(host.querySelectorAll('.mwnf-search-form__row').length).toBe(3)
@@ -578,7 +570,7 @@ describe('website smoke test', () => {
     const visibleItalyItems = items.filter((i) => i.display_status !== 'N' && i.country_id === countryId)
     expect(visibleItalyItems.length, 'fixture: Italy has visible items').toBeGreaterThan(0)
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/database/results?q=${encodeURIComponent(countryName)}&field=location`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
@@ -604,7 +596,7 @@ describe('website smoke test', () => {
     expect(fixture, 'fixture: a visible item with a distinctive name word').not.toBeNull()
     const expectedName = itemTexts[fixture.id].name.replace(/[*_]/g, '')
 
-    const { app, host } = await mountSite(
+    const { app, host } = await mountSite(config, messages,
       `#/database/results?q=${encodeURIComponent(countryTexts[fixture.country_id].name)}&field=location&q4=worthy&field4=name&op4=AND`,
     )
     await vi.waitFor(() => expect(host.querySelector('.mwnf-list__row')).not.toBeNull(), { timeout: 20000 })
@@ -622,7 +614,7 @@ describe('website smoke test', () => {
   // this site's own, over the exhibition tree rather than a record facet.
   it('renders the Permanent Collection entrance on the composed radio form, with real facet options', async () => {
     const [countries] = await loadEntities(['countries'])
-    const { app, host } = await mountSite('#/permanent-collection')
+    const { app, host } = await mountSite(config, messages, '#/permanent-collection')
     await vi.waitFor(() => expect(host.querySelectorAll('.mwnf-search-form__radio-row').length).toBeGreaterThan(0), { timeout: 20000 })
 
     const radioRows = host.querySelectorAll('.mwnf-search-form__radio-row')
@@ -640,18 +632,16 @@ describe('website smoke test', () => {
   }, 20000)
 
   it('declares every route by name, and leaves the catch-all to the router', () => {
-    const names = config.extraViews.map((r) => r.name)
-    for (const name of [
-      'home', 'permanent-collection', 'permanent-collection-results', 'database',
-      'database-results', 'timeline', 'timeline-results', 'timeline-gallery', 'partners', 'partners-results',
-      'partner', 'exhibitions', 'exhibition', 'exhibition-introduction',
-      'exhibition-further-reading', 'exhibition-theme', 'exhibition-chapter',
-      'historical-background', 'historical-profiles', 'historical-profile', 'item',
-    ]) {
-      expect(names).toContain(name)
-    }
-    expect(config.extraViews.every((r) => r.name)).toBe(true)
-    expect(config.extraViews.some((r) => r.path.includes('pathMatch'))).toBe(false)
+    expect(checkRoutes(config, {
+      names: [
+        'home', 'permanent-collection', 'permanent-collection-results', 'database',
+        'database-results', 'timeline', 'timeline-results', 'timeline-gallery', 'partners', 'partners-results',
+        'partner', 'exhibitions', 'exhibition', 'exhibition-introduction',
+        'exhibition-further-reading', 'exhibition-theme', 'exhibition-chapter',
+        'historical-background', 'historical-profiles', 'historical-profile', 'item',
+      ],
+      legacyPaths: ['/historical-background/:recordId'],
+    })).toEqual([])
   })
 
   it('declares the entities every route reads', () => {
@@ -667,10 +657,7 @@ describe('website smoke test', () => {
     // The shell highlights the current menu entry off `meta.section`
     // (viewer-core's `useSection`) rather than deriving it from the path, so
     // a route without one would silently light up no entry at all.
-    for (const route of config.extraViews) {
-      expect(typeof route.meta?.section, route.name).toBe('string')
-      expect(route.meta.section.length > 0, route.name).toBe(true)
-    }
+    expect(checkSectionMeta(config)).toEqual([])
   })
 
   it('keeps the old country-profile addresses working', () => {
@@ -727,7 +714,7 @@ describe('website smoke test', () => {
   // rendered page, not the files, so a bundle that installs but never reaches
   // the components fails here too.
   it('renders the shared texts and its own over them', async () => {
-    const { app, host } = await mountSite()
+    const { app, host } = await mountSite(config, messages)
 
     const text = host.textContent
     // From viewer-i18n: the layout's skip link and the menu's first entry.
@@ -739,7 +726,7 @@ describe('website smoke test', () => {
     expect(text).toContain('Welcome to Sharing History')
     // Nothing rendered as a bare entry name, which is what a missing text
     // looks like — there is no exception to throw for one.
-    expect(text).not.toMatch(/\b(sharinghistory|core|layout)\.[a-z]/i)
+    expect(checkTextsRendered(host, { namespaces: ['sharinghistory', 'core', 'layout'] })).toEqual([])
 
     app.unmount()
   }, 20000)

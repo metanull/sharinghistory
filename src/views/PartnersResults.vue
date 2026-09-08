@@ -16,10 +16,10 @@ function totalCount(groups) {
 </script>
 
 <template>
-  <PartnerListView :spec="partnersList" class="partners-results">
+  <PartnerListView :spec="partnersList" class="mwnf-panel partners-results">
     <template #before="{ groups }">
       <BackLink label="partner.nav.back" :to="{ name: 'partners' }" />
-      <h1 class="section-heading">
+      <h1 class="mwnf-heading">
         {{ $t('sharinghistory.nav.partners') }}
         <span class="heading-project"> — {{ $t('sharinghistory.identity.title') }}</span>
       </h1>
@@ -31,11 +31,8 @@ function totalCount(groups) {
 <style scoped>
 .heading-project { font-weight: normal; font-size: 14px; color: var(--muted); }
 
-.partners-results {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
-}
+/* .partners-results carries no styles of its own now (mwnf-panel supplies
+   the box) — kept only as the :deep() scoping hook below. */
 
 .result-count {
   font-family: 'Roboto', sans-serif;

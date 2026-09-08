@@ -71,11 +71,13 @@ const thgGalleryLinks = (record) =>
 </script>
 
 <template>
-  <RecordView :spec="itemSheet" :id="id" class="detail content-box">
+  <RecordView :spec="itemSheet" :id="id" class="detail mwnf-panel">
     <template #header="{ record, text, language, languages, select, dir, glossary }">
+      <!-- Two links sharing a header row is this page's own layout; only the
+           tokens (colour, hover) come from the shared bar class. -->
       <div class="detail-top">
-        <a class="back-link" href="#" @click.prevent="back">← {{ $t('record.action.backToResults') }}</a>
-        <router-link v-if="timelineLink(record)" :to="timelineLink(record)" class="timeline-link">{{ $t('record.action.viewOnTimeline') }} →</router-link>
+        <a class="mwnf-back-bar" href="#" @click.prevent="back">← {{ $t('record.action.backToResults') }}</a>
+        <router-link v-if="timelineLink(record)" :to="timelineLink(record)" class="mwnf-back-bar">{{ $t('record.action.viewOnTimeline') }} →</router-link>
       </div>
       <!-- In a block of its own: the view lays the header out as a column,
            and a badge placed directly in it would stretch to the full width. -->

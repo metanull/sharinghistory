@@ -95,19 +95,19 @@ function back() {
 </script>
 
 <template>
-  <div v-if="!exhibition" class="content-box not-found">
+  <div v-if="!exhibition" class="mwnf-panel not-found">
     <p>{{ t('sharinghistory.notFound.exhibition') }}</p>
     <router-link to="/exhibitions">← {{ t('exhibition.chapter.returnToExhibitions') }}</router-link>
   </div>
 
   <div v-else>
-    <a class="back-link" href="#" @click.prevent="back">← {{ t('exhibition.chapter.returnToExhibitions') }}</a>
+    <a class="mwnf-back-bar" href="#" @click.prevent="back">← {{ t('exhibition.chapter.returnToExhibitions') }}</a>
 
-    <h1 class="section-heading" v-html="mdInline(text.title ?? exhibition.internal_name)" />
+    <h1 class="mwnf-heading" v-html="mdInline(text.title ?? exhibition.internal_name)" />
 
-    <div class="content-box intro-box">
+    <div class="mwnf-panel intro-box">
       <h2 v-if="text.extra?.subtitle" class="intro-subtitle" v-html="mdInline(text.extra.subtitle)" />
-      <div v-if="teaser" class="prose" v-html="md(teaser)" />
+      <div v-if="teaser" class="mwnf-prose" v-html="md(teaser)" />
       <p v-if="text.extra?.credits" class="intro-credits" v-html="mdInline(text.extra.credits)" />
     </div>
 
@@ -129,10 +129,6 @@ function back() {
   margin-bottom: 12px;
   font-family: 'Roboto', sans-serif;
 }
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
-.prose :deep(p:last-child) { margin-bottom: 0; }
-
 .intro-credits {
   margin-top: 14px;
   padding-top: 12px;
