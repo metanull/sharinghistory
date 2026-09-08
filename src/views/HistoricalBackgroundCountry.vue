@@ -2,6 +2,7 @@
 import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
+import { SourceCredit } from '@metanull/viewer-layout/content'
 import { EssayView } from '@metanull/viewer-layout/views'
 import { historicalProfilesTree } from '../composables/history.js'
 import { historicalBackgroundCountrySpec } from '../composables/historySpecs.js'
@@ -12,7 +13,8 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 // bibliography, the historical maps — is not a field of the page's
 // translation at all, so it is this wrapper's own `before-body`/`after`
 // slot content, read off `record` directly rather than off the essay's
-// current node.
+// current node. Overriding `after` drops EssayView's own default content
+// (SourceCredit), so it is rendered here explicitly to keep the citation.
 
 const props = defineProps({
   recordId: { type: String, required: true },
@@ -78,6 +80,8 @@ function bibliographyMarkdown(tr, language) {
       </template>
 
       <template #after="{ tr, language }">
+        <SourceCredit />
+
         <div class="hb-related">
           <h3 class="hb-item-heading">{{ t('sharinghistory.related.title') }}</h3>
           <ul class="hb-related-list">

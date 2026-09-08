@@ -44,6 +44,27 @@ describe('website smoke test', () => {
     app.unmount()
   }, 20000)
 
+  // The footer's attribution and terms link (sharinghistory#52): SiteShell
+  // reads them off the package's own `manifest.rights` through viewer-core's
+  // `useSiteRights()` — nothing this site declares itself.
+  it('renders the footer attribution and terms link from the package rights', async () => {
+    const { app, host } = await mountSite(config, messages)
+    const { manifest } = useDataPackage()
+    expect(manifest.rights?.attribution, 'fixture: the package declares an attribution').toBeTruthy()
+
+    const attribution = host.querySelector('.mwnf-footer__attribution')
+    expect(attribution).not.toBeNull()
+    expect(attribution.textContent).toContain(sharedTexts.en['record.source.rightsHolder'])
+    expect(attribution.textContent).toContain(manifest.rights.attribution)
+
+    const termsLink = attribution.querySelector('.mwnf-footer__terms')
+    expect(termsLink).not.toBeNull()
+    expect(termsLink.textContent.trim()).toBe(sharedTexts.en['record.source.termsOfUse'])
+    expect(termsLink.getAttribute('href')).toBe(manifest.rights.terms_url)
+
+    app.unmount()
+  }, 20000)
+
   // The Permanent Collection list runs on the platform's composed results
   // view (metanull/viewer-core#50): the rows and the filter panel come from
   // the catalogue spec in composables/catalogue.js, the exhibition cascade
@@ -126,6 +147,12 @@ describe('website smoke test', () => {
       expect(bodyEl).not.toBeNull()
       expect(bodyEl.textContent).toBeTruthy()
     }
+
+    // EssayView's own default `after` content (sharinghistory#52): the
+    // citation's permalink, off the same site origin as the item sheet's.
+    const creditLink = host.querySelector('.mwnf-source-credit a')
+    expect(creditLink).not.toBeNull()
+    expect(creditLink.getAttribute('href').startsWith(`${config.site.origin}/#`)).toBe(true)
 
     app.unmount()
   }, 60000)
@@ -362,6 +389,15 @@ describe('website smoke test', () => {
     expect(host.querySelector('.detail-type-badge').textContent.trim()).toBe(object.type)
     expect(host.querySelector('.detail-title').textContent.trim()).not.toBe('')
     expect(host.querySelector('.fact-link a')).not.toBeNull()
+
+    // The citation's permalink (viewer-core's sourceUrl, sharinghistory#52):
+    // the declared site origin plus this record's own hash route.
+    const creditLink = host.querySelector('.mwnf-source-credit a')
+    expect(creditLink).not.toBeNull()
+    expect(creditLink.getAttribute('href').startsWith(`${config.site.origin}/#`)).toBe(true)
+    expect(decodeURIComponent(creditLink.getAttribute('href'))).toContain(`/item/${object.id}`)
+    expect(creditLink.textContent).toBe(creditLink.getAttribute('href'))
+
     app.unmount()
   }, 60000)
 
@@ -725,8 +761,13 @@ describe('website smoke test', () => {
     expect(text).toContain('Permanent Collection')
     expect(text).toContain('Welcome to Sharing History')
     // Nothing rendered as a bare entry name, which is what a missing text
-    // looks like — there is no exception to throw for one.
-    expect(checkTextsRendered(host, { namespaces: ['sharinghistory', 'core', 'layout'] })).toEqual([])
+    // looks like — there is no exception to throw for one. Every namespace
+    // the pages render, not just this site's own: a raw shared key (record,
+    // sheet, timeline, partner, catalogue, exhibition — this site's product
+    // section) otherwise passes the check unseen.
+    expect(checkTextsRendered(host, {
+      namespaces: ['sharinghistory', 'core', 'layout', 'catalogue', 'record', 'sheet', 'timeline', 'partner', 'exhibition'],
+    })).toEqual([])
 
     app.unmount()
   }, 20000)

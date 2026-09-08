@@ -29,6 +29,12 @@ export default {
 
   siteName: manifest.site?.names?.en ?? 'Sharing History',
 
+  // The absolute origin this build is deployed at (base path included, no
+  // trailing slash) — the GitHub Pages address until the domain is decided,
+  // matching the base path vite.config.js's BASE_PATH sets. Read by
+  // sourceUrl() for the sheet's citation permalink; changes with the domain.
+  site: { origin: 'https://metanull.github.io/sharinghistory' },
+
   // Every page is a website-specific view (below) reimplementing the legacy
   // site's own pages. The generic entity list/detail pages viewer-core can
   // auto-generate are switched off: they publish the data package's shape

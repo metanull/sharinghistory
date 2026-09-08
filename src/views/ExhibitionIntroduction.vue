@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from '@metanull/viewer-core'
 import { AppHyperlinks } from '@metanull/viewer-layout'
+import { SourceCredit } from '@metanull/viewer-layout/content'
 import { EssayView } from '@metanull/viewer-layout/views'
 import { exhibitionIntroductionSpec, relatedContentLinks } from '../composables/exhibitionSpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
@@ -11,6 +12,8 @@ import { useInventoryData } from '../composables/useInventoryData.js'
 // in its own right — the exhibition collection itself — so back link,
 // title, quote/body and the item grid all come from the view's default
 // rendering; only the "Related Content" box is this site's own, in `after`.
+// Overriding that slot drops EssayView's own default content (SourceCredit),
+// so it is rendered here explicitly to keep the citation on the page.
 
 const route = useRoute()
 const { t } = useI18n()
@@ -30,6 +33,7 @@ function relatedLinks(node, text) {
   <EssayView :spec="exhibitionIntroductionSpec" :id="exhibitionId">
     <template #after="{ node, text }">
       <AppHyperlinks :title="t('sharinghistory.related.title')" :links="relatedLinks(node, text)" />
+      <SourceCredit />
     </template>
   </EssayView>
 </template>
