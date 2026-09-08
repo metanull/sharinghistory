@@ -41,11 +41,11 @@ const { md, mdInline } = useInventoryData()
     <template #after-body="{ text }">
       <div v-if="text.extra?.see_also_links" class="chapter-extra">
         <h3 class="chapter-extra__heading">{{ t('sharinghistory.exhibition.seeAlso') }}</h3>
-        <div class="prose" v-html="md(text.extra.see_also_links)" />
+        <div class="mwnf-prose" v-html="md(text.extra.see_also_links)" />
       </div>
       <div v-if="text.extra?.further_reading" class="chapter-extra">
         <h3 class="chapter-extra__heading">{{ t('exhibition.relatedCategory.furtherReading') }}</h3>
-        <div class="prose" v-html="md(text.extra.further_reading)" />
+        <div class="mwnf-prose" v-html="md(text.extra.further_reading)" />
       </div>
     </template>
   </EssayView>
@@ -81,7 +81,4 @@ const { md, mdInline } = useInventoryData()
   margin-bottom: 6px;
   font-family: 'Roboto', sans-serif;
 }
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
-.prose :deep(p:last-child) { margin-bottom: 0; }
 </style>

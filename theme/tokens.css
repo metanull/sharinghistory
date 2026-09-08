@@ -158,4 +158,28 @@
   --mwnf-featured-name-color: #750101;
   --mwnf-featured-meta-size: 0.8125rem;
   --mwnf-featured-meta-color: #5a5a5a;
+
+  /* ---------- Content classes ---------- */
+  /* The utility classes views assemble their own layouts from (site.css no
+     longer duplicates them): the legacy content box, section heading, form
+     table, buttons, select and back link. */
+  --mwnf-panel-border: 1px solid #b08c8c;
+  --mwnf-heading-color: #750101;
+  --mwnf-heading-border: 2px solid #990000;
+  --mwnf-form-table-th-color: #5a5a5a;
+  --mwnf-button-background: #990000;
+  --mwnf-button-hover-background: #af2626;
+  --mwnf-button-letter-spacing: 0.03em;
+  --mwnf-button-secondary-background: #b08c8c;
+  --mwnf-button-secondary-text: #222222;
+  --mwnf-button-secondary-hover-background: #c46a6a;
+  --mwnf-select-size: 0.8125rem;
+  --mwnf-select-padding: 4px 8px;
+  --mwnf-select-border: 1px solid #b08c8c;
+  --mwnf-select-background: #faf6f0;
+  --mwnf-select-text: #222222;
+  --mwnf-select-focus-outline: 1px solid #990000;
+  --mwnf-back-bar-padding: 0;
+  --mwnf-back-bar-text: #5a5a5a;
+  --mwnf-back-bar-hover-text: #990000;
 }

@@ -2,6 +2,19 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
+// `@metanull/viewer-core/testing`'s `defineViewerConfig()` would replace most
+// of this file, but its barrel (`src/testing/index.js`) re-exports
+// `mountSite` from `smoke.js`, which imports `createViewer.js` and, through
+// it, `AppRoot.vue` — a Vue SFC. Vite's own config loader (rolldown's
+// `externalize-deps`) marks every bare package import as external and loads
+// it through plain Node ESM, which cannot parse `.vue`: importing
+// `@metanull/viewer-core/testing` (or even bare `@metanull/viewer-core`)
+// here throws `ERR_UNKNOWN_FILE_EXTENSION` on `AppRoot.vue`, confirmed
+// against the installed 1.12.3, both under `vitest run` and plain
+// `node --input-type=module -e "import('@metanull/viewer-core')"`. The
+// package's `exports` map has no subpath around the barrel either. Until the
+// package splits a Vue-free entry point for this helper, this file keeps the
+// shape `defineViewerConfig()` would produce, written out by hand.
 export default defineConfig({
   // GitHub Pages serves the site under /<repo>/; the deploy workflow sets
   // BASE_PATH accordingly. Local dev and root deployments use /.

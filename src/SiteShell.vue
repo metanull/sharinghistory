@@ -1,52 +1,28 @@
 <script setup>
-// PageShell with the legacy MWNF header lockup ("Museum With No Frontiers"
-// over "Sharing History" over the period strapline) supplied through the
-// header slot. All other PageShell props and the update:language event pass
-// through untouched via $attrs.
-import { computed } from 'vue'
-import { useI18n, useSection } from '@metanull/viewer-core'
-import { PageShell } from '@metanull/viewer-layout'
+// A thin mount of @metanull/viewer-layout's own SiteShell: the menu, the
+// active entry and the footer text all come from `dataset.config.js`'s
+// `navigation` (SiteShell reads it through viewer-core's `useSiteConfig()`)
+// plus the footer text passed here; `$attrs` carries the language state
+// PageShell needs (`language`, `languages`, `update:language`) straight
+// through, the same as before. All this file still supplies is what a
+// config cannot — the header lockup markup — in the #brand slot.
+import { useI18n } from '@metanull/viewer-core'
+import { SiteShell } from '@metanull/viewer-layout/components'
 
 const { t } = useI18n()
-
-// The menu is built here rather than in dataset.config.js because a label is a
-// text and a text is only available inside the application: `t` needs the
-// installed catalogue, and every name has to be written out where it is used
-// so `viewer-i18n-check` can see it. The config keeps what is not a text —
-// the offered languages — and PageShell receives these links after $attrs, so
-// they take precedence over anything the config still passes.
-// The legacy site's own top-level sections, in its own order — this site leads
-// with the exhibitions and adds the two historical sections. Which entry is
-// active is the section the route declares (`meta.section`), read through
-// viewer-core's `useSection()` — never derived from the path.
-const section = useSection()
-const navLinks = computed(() => [
-  { label: t('core.nav.home'), href: '#/', active: section.value === 'home' },
-  { label: t('sharinghistory.nav.exhibitions'), href: '#/exhibitions', active: section.value === 'exhibitions' },
-  { label: t('sharinghistory.nav.permanentCollection'), href: '#/permanent-collection', active: section.value === 'permanent-collection' },
-  { label: t('sharinghistory.nav.database'), href: '#/database', active: section.value === 'database' },
-  { label: t('sharinghistory.nav.timeline'), href: '#/timeline', active: section.value === 'timeline' },
-  { label: t('sharinghistory.nav.historicalBackground'), href: '#/historical-background', active: section.value === 'historical-background' },
-  { label: t('sharinghistory.nav.historicalProfiles'), href: '#/historical-profiles', active: section.value === 'historical-profiles' },
-  { label: t('sharinghistory.nav.partners'), href: '#/partners', active: section.value === 'partners' },
-])
 </script>
 
 <template>
-  <PageShell
-    v-bind="$attrs"
-    :nav-links="navLinks"
-    :footer-text="$t('sharinghistory.identity.copyright')"
-  >
-    <template #header>
+  <SiteShell v-bind="$attrs" :footer-text="t('sharinghistory.identity.copyright')">
+    <template #brand>
       <a class="site-logo" href="#/">
-        <span class="site-logo-org">{{ $t('sharinghistory.identity.organisation') }}</span>
-        <span class="site-logo-title">{{ $t('sharinghistory.identity.title') }}</span>
-        <span class="site-logo-sub">{{ $t('sharinghistory.identity.strapline') }}</span>
+        <span class="site-logo-org">{{ t('sharinghistory.identity.organisation') }}</span>
+        <span class="site-logo-title">{{ t('sharinghistory.identity.title') }}</span>
+        <span class="site-logo-sub">{{ t('sharinghistory.identity.strapline') }}</span>
       </a>
     </template>
     <slot />
-  </PageShell>
+  </SiteShell>
 </template>
 
 <style scoped>
@@ -54,8 +30,14 @@ const navLinks = computed(() => [
   display: flex;
   flex-direction: column;
   gap: 1px;
-  color: var(--header-fg);
   text-decoration: none !important;
+  /* The global `a { color }` rule (site.css) would otherwise win over the
+     header's own inherited text colour, since it targets the element
+     directly rather than through inheritance. */
+  color: var(--mwnf-header-text);
+}
+.site-logo:hover {
+  color: var(--mwnf-header-text);
 }
 .site-logo-org {
   font-size: 11px;
@@ -74,8 +56,5 @@ const navLinks = computed(() => [
   font-size: 12px;
   letter-spacing: 0.04em;
   opacity: 0.9;
-}
-.site-logo:hover {
-  color: var(--header-fg);
 }
 </style>

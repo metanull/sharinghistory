@@ -59,8 +59,8 @@ const insightCountries = computed(() =>
 
 <template>
   <div class="hb-wrap">
-    <div class="content-box">
-      <h1 class="section-heading">{{ t('sharinghistory.nav.historicalBackground') }}</h1>
+    <div class="mwnf-panel">
+      <h1 class="mwnf-heading">{{ t('sharinghistory.nav.historicalBackground') }}</h1>
       <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.intro" />
 
       <div v-if="perspectives.length" class="perspective-tabs">
@@ -75,12 +75,12 @@ const insightCountries = computed(() =>
 
       <div v-if="activePerspective">
         <h2 class="perspective-title" v-html="mdInline(activePerspective.title)" />
-        <div class="prose" v-html="md(activePerspective.description)" />
+        <div class="mwnf-prose" v-html="md(activePerspective.description)" />
       </div>
     </div>
 
-    <div v-if="topics.length" class="content-box">
-      <h2 class="section-heading">{{ t('sharinghistory.action.readMore') }}</h2>
+    <div v-if="topics.length" class="mwnf-panel">
+      <h2 class="mwnf-heading">{{ t('sharinghistory.action.readMore') }}</h2>
       <ul class="topic-list">
         <li v-for="topic in topics" :key="topic.id" class="topic-row">
           <span class="topic-name" v-html="mdInline(topic.title)" />
@@ -88,8 +88,8 @@ const insightCountries = computed(() =>
       </ul>
     </div>
 
-    <div class="content-box">
-      <h2 class="section-heading">{{ t('sharinghistory.history.countryInsight') }}</h2>
+    <div class="mwnf-panel">
+      <h2 class="mwnf-heading">{{ t('sharinghistory.history.countryInsight') }}</h2>
       <I18nText tag="p" class="hb-intro-note" keypath="sharinghistory.history.countryInsightIntro" />
       <table class="insight-table">
         <tbody>
@@ -156,9 +156,6 @@ const insightCountries = computed(() =>
   margin-bottom: 10px;
   font-family: 'Roboto', sans-serif;
 }
-
-.prose { font-size: 14px; line-height: 1.7; color: var(--text); font-family: 'Roboto', sans-serif; }
-.prose :deep(p) { margin: 0 0 .75em; }
 
 .topic-list { list-style: none; }
 .topic-row {

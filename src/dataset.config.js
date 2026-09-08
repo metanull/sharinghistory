@@ -42,11 +42,25 @@ export default {
 
   shell: SiteShell,
 
-  // Only what is not a text. The menu labels and the footer line are texts, so
-  // they are built in SiteShell.vue where the catalogue is installed; the
-  // language names below come from the data package, not from a translator.
+  // The menu SiteShell (@metanull/viewer-layout/components) reads directly:
+  // legacy's own top-level sections, in its own order — this site leads with
+  // the exhibitions and adds the two historical sections. Each `section`
+  // matches the route meta below, so the active entry follows `useSection()`
+  // rather than the path; `label` is an entry name, resolved by the shell
+  // itself (only there is the installed catalogue available). The language
+  // names come from the data package, not from a translator.
   navigation: {
     languages: languageLabels(languages),
+    links: [
+      { section: 'home', label: 'core.nav.home', to: { name: 'home' } },
+      { section: 'exhibitions', label: 'sharinghistory.nav.exhibitions', to: { name: 'exhibitions' } },
+      { section: 'permanent-collection', label: 'sharinghistory.nav.permanentCollection', to: { name: 'permanent-collection' } },
+      { section: 'database', label: 'sharinghistory.nav.database', to: { name: 'database' } },
+      { section: 'timeline', label: 'sharinghistory.nav.timeline', to: { name: 'timeline' } },
+      { section: 'historical-background', label: 'sharinghistory.nav.historicalBackground', to: { name: 'historical-background' } },
+      { section: 'historical-profiles', label: 'sharinghistory.nav.historicalProfiles', to: { name: 'historical-profiles' } },
+      { section: 'partners', label: 'sharinghistory.nav.partners', to: { name: 'partners' } },
+    ],
   },
 
   // The route map: every route named, kebab-case sections, and the page and

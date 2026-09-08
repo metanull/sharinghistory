@@ -43,24 +43,24 @@ const spec = computed(() => ({ ...databaseResults, narrow }))
 </script>
 
 <template>
-  <CatalogueResultsView :spec="spec" class="database-results">
+  <CatalogueResultsView :spec="spec" class="mwnf-panel">
     <template #before>
-      <h1 class="section-heading">{{ $t('sharinghistory.nav.database') }} — {{ $t('catalogue.results.heading') }}</h1>
+      <h1 class="mwnf-heading">{{ $t('sharinghistory.nav.database') }} — {{ $t('catalogue.results.heading') }}</h1>
     </template>
 
     <template #actions>
-      <RouterLink :to="{ name: 'database' }" class="btn btn-secondary small">{{ $t('catalogue.search.newSearch') }}</RouterLink>
+      <RouterLink :to="{ name: 'database' }" class="mwnf-button mwnf-button--secondary small">{{ $t('catalogue.search.newSearch') }}</RouterLink>
     </template>
 
     <template #filters="{ filters }">
-      <select v-model="filters.op4" class="cond">
+      <select v-model="filters.op4" class="mwnf-select cond">
         <option value="AND">{{ $t('catalogue.search.and') }}</option>
         <option value="OR">{{ $t('catalogue.search.or') }}</option>
       </select>
-      <select v-model="filters.field4" class="field">
+      <select v-model="filters.field4" class="mwnf-select field">
         <option v-for="f in fieldOptions" :key="f.value" :value="f.value">{{ f.label }}</option>
       </select>
-      <input v-model="filters.q4" type="text" class="keyword" :placeholder="$t('catalogue.search.keywordPlaceholder')" />
+      <input v-model="filters.q4" type="text" class="mwnf-select keyword" :placeholder="$t('catalogue.search.keywordPlaceholder')" />
     </template>
 
     <template #empty>
@@ -71,14 +71,10 @@ const spec = computed(() => ({ ...databaseResults, narrow }))
 </template>
 
 <style scoped>
-.database-results {
-  background: var(--content-bg);
-  border: 1px solid var(--border);
-  padding: 20px;
-}
-
-.btn.small { font-size: 12px; padding: 4px 12px; text-decoration: none; }
-.btn.small + .btn.small { margin-left: 8px; }
+/* The refine row's fourth keyword field is this page's own — small enough
+   a variant that it stays a one-off on top of the shared button/select. */
+.mwnf-button.small { font-size: 12px; padding: 4px 12px; text-decoration: none; }
+.mwnf-button.small + .mwnf-button.small { margin-left: 8px; }
 .cond { width: 60px; }
 .field { width: 200px; }
 .keyword { width: 200px; }
