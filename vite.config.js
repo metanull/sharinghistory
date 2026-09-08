@@ -2,19 +2,19 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
 
-// `@metanull/viewer-core/testing`'s `defineViewerConfig()` would replace most
-// of this file, but its barrel (`src/testing/index.js`) re-exports
-// `mountSite` from `smoke.js`, which imports `createViewer.js` and, through
-// it, `AppRoot.vue` — a Vue SFC. Vite's own config loader (rolldown's
-// `externalize-deps`) marks every bare package import as external and loads
-// it through plain Node ESM, which cannot parse `.vue`: importing
-// `@metanull/viewer-core/testing` (or even bare `@metanull/viewer-core`)
-// here throws `ERR_UNKNOWN_FILE_EXTENSION` on `AppRoot.vue`, confirmed
-// against the installed 1.12.3, both under `vitest run` and plain
-// `node --input-type=module -e "import('@metanull/viewer-core')"`. The
-// package's `exports` map has no subpath around the barrel either. Until the
-// package splits a Vue-free entry point for this helper, this file keeps the
-// shape `defineViewerConfig()` would produce, written out by hand.
+// `@metanull/viewer-core/vite`'s `defineViewerConfig()` (1.13.1) fixes the
+// old ERR_UNKNOWN_FILE_EXTENSION defect this file used to work around, but
+// its own `@inventory-data` alias is computed from `import.meta.url` inside
+// the *helper's own* file (viewer-core's `src/testing/viteConfig.js`), not
+// the caller's — it resolves to a `.../viewer-core/src/testing/node_modules/
+// <package>` path, which does not exist. `import.meta.glob('@inventory-data
+// /*.json', ...)` in `useDataPackage.js` then matches nothing, so every
+// `loadEntity()` call throws "Unknown entity" at runtime; a plain `vite
+// build` does not catch it because an empty glob match is not a build
+// error. Confirmed against the installed 1.13.1: `npm test` fails every
+// smoke assertion with exactly that error, and the alias' target directory
+// is absent from disk. Until the package fixes the helper, this file keeps
+// writing the config out by hand.
 export default defineConfig({
   // GitHub Pages serves the site under /<repo>/; the deploy workflow sets
   // BASE_PATH accordingly. Local dev and root deployments use /.
