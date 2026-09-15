@@ -33,7 +33,7 @@ export default {
   // trailing slash) — the GitHub Pages address until the domain is decided,
   // matching the base path vite.config.js's BASE_PATH sets. Read by
   // sourceUrl() for the sheet's citation permalink; changes with the domain.
-  site: { origin: 'https://metanull.github.io/sharinghistory' },
+  site: { origin: 'https://museumwithnofrontiers.github.io/sharinghistory' },
 
   // Every page is a website-specific view (below) reimplementing the legacy
   // site's own pages. The generic entity list/detail pages viewer-core can
