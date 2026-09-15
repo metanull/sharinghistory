@@ -1,8 +1,8 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { combineExpansions, countryExpansion, glossaryExpansion, useKeywordIndex } from '@metanull/viewer-core'
-import { CatalogueResultsView } from '@metanull/viewer-layout/views'
+import { combineExpansions, countryExpansion, glossaryExpansion, useKeywordIndex } from '@museumwnf/viewer-core'
+import { CatalogueResultsView } from '@museumwnf/viewer-layout/views'
 import { useInventoryData } from '../composables/useInventoryData.js'
 import { SEARCH_FIELDS, databaseResults, searchRows, useSearchFields } from '../composables/catalogue.js'
 

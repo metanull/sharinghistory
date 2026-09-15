@@ -6,21 +6,18 @@ historical background, country timelines and partners, built from the
 published dataset.
 
 A website is a light, static Vue 3 front-end for one published dataset. It
-combines three `@metanull` packages from GitHub Packages:
+combines three `@museumwnf` packages from npmjs:
 
 | Package | Role |
 | --- | --- |
-| `@metanull/sharinghistory-data` | the dataset (JSON + `manifest.json`, **private**) |
-| `@metanull/viewer-core` | application engine (routing, data access, the text runtime and the language service) |
-| `@metanull/viewer-i18n` | the texts shared with the other MWNF websites (this one receives the `standalone` bundle: `core` + `layout`) |
-| `@metanull/viewer-layout` | page structure (`PageShell` + sections), themed via `theme/tokens.css` |
+| `@museumwnf/sharinghistory-data` | the dataset (JSON + `manifest.json`) |
+| `@museumwnf/viewer-core` | application engine (routing, data access, the text runtime and the language service) |
+| `@museumwnf/viewer-i18n` | the texts shared with the other MWNF websites (this one receives the `standalone` bundle: `core` + `layout`) |
+| `@museumwnf/viewer-layout` | page structure (`PageShell` + sections), themed via `theme/tokens.css` |
 
-Because the data package is private, every `npm install` needs authenticated
-access to GitHub Packages. In CI there is nothing to configure: the package
-grants this repository Read under *Manage Actions access*, so the workflow's
-built-in `github.token` can install it — no secret, no PAT. Locally, each
-developer authenticates for themselves, with `npm login --registry=https://npm.pkg.github.com`
-or a personal `~/.npmrc`; the Docker preview mounts that `~/.npmrc` read-only.
+Every one of these packages publishes publicly to npmjs, so no login, token
+or package-access grant is needed — on any machine, or in the Docker preview
+below, a plain `npm install` resolves them anonymously.
 
 ## Dataset specifics
 
@@ -114,10 +111,8 @@ For real design work, use the live preview:
    - Install **Docker Desktop** (docker.com) and **GitHub Desktop**
      (desktop.github.com), each with default settings.
    - In GitHub Desktop: File → Clone repository → pick this repository.
-   - Sign in to GitHub Packages once, in a terminal:
-     `npm login --registry=https://npm.pkg.github.com --scope=@metanull`.
-     That login stays on your own computer, and the preview reads it. Nothing
-     in this repository holds a token.
+   - No npm login is needed: every `@museumwnf` package installs anonymously
+     from npmjs. Nothing in this repository holds a token.
 2. **Start the preview:** open a terminal in the folder (GitHub Desktop:
    Repository → Open in Command Prompt) and run:
 

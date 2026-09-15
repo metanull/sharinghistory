@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useCollectionTree } from '@metanull/viewer-core'
+import { useCollectionTree } from '@museumwnf/viewer-core'
 
 // The exhibition tree — exhibitions → themes → chapters — replaces the
 // hand-written parent_id walk this file used to be part of

@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { loadEntities, mergeMessages, useDataPackage } from '@metanull/viewer-core'
+import { loadEntities, mergeMessages, useDataPackage } from '@museumwnf/viewer-core'
 import {
   checkOfferedLanguages, checkRoutes, checkSectionMeta, checkTextsRendered, mountSite,
-} from '@metanull/viewer-core/testing'
-import { catalogues as sharedTexts } from '@metanull/viewer-i18n/standalone'
+} from '@museumwnf/viewer-core/testing'
+import { catalogues as sharedTexts } from '@museumwnf/viewer-i18n/standalone'
 import ownTexts from '../locales/en.json'
-import collectionTexts from '@metanull/sharinghistory-data/translations/collections.en.json'
-import countryTexts from '@metanull/sharinghistory-data/translations/countries.en.json'
-import itemTexts from '@metanull/sharinghistory-data/translations/items.en.json'
-import partnerTexts from '@metanull/sharinghistory-data/translations/partners.en.json'
-import timelineEventTexts from '@metanull/sharinghistory-data/translations/timeline_events.en.json'
+import collectionTexts from '@museumwnf/sharinghistory-data/translations/collections.en.json'
+import countryTexts from '@museumwnf/sharinghistory-data/translations/countries.en.json'
+import itemTexts from '@museumwnf/sharinghistory-data/translations/items.en.json'
+import partnerTexts from '@museumwnf/sharinghistory-data/translations/partners.en.json'
+import timelineEventTexts from '@museumwnf/sharinghistory-data/translations/timeline_events.en.json'
 import { collectionTitle, itemIdsUnder } from '../src/composables/catalogue.js'
 import config from '../src/dataset.config.js'
 import { exhibitionTree } from '../src/composables/exhibitions.js'
@@ -714,7 +714,7 @@ describe('website smoke test', () => {
   // an object: `byId(...)[id]` reads as undefined rather than failing, so a
   // page would simply render nothing. This is where that shows.
   it('resolves a record through the shared index', async () => {
-    const { loadEntities } = await import('@metanull/viewer-core')
+    const { loadEntities } = await import('@museumwnf/viewer-core')
     const { itemById } = useInventoryData()
     const [items] = await loadEntities(['items'])
     expect(itemById.value).toBeInstanceOf(Map)

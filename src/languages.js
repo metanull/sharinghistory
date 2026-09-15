@@ -12,7 +12,7 @@
  * This is the site language only. A record carrying more languages than this
  * still offers them on its own sheet, from a toggle that changes nothing else.
  *
- * A single entry is not a defect: `@metanull/viewer-layout` renders the
+ * A single entry is not a defect: `@museumwnf/viewer-layout` renders the
  * language switcher only when there is more than one language, so the site
  * simply has no switcher until this list grows.
  *

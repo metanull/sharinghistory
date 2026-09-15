@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { I18nText, useFacets } from '@metanull/viewer-core'
-import { SearchFormView } from '@metanull/viewer-layout/views'
+import { I18nText, useFacets } from '@museumwnf/viewer-core'
+import { SearchFormView } from '@museumwnf/viewer-layout/views'
 import { useInventoryData } from '../composables/useInventoryData.js'
 import { FACETS, exhibitionOptions } from '../composables/catalogue.js'
 

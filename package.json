@@ -14,10 +14,10 @@
     "namespace": "sharinghistory"
   },
   "dependencies": {
-    "@metanull/sharinghistory-data": "^1.2.8",
-    "@metanull/viewer-core": "^1.13.2",
-    "@metanull/viewer-i18n": "^3.0.1",
-    "@metanull/viewer-layout": "^2.11.2",
+    "@museumwnf/sharinghistory-data": "^1.2.9",
+    "@museumwnf/viewer-core": "^1.15.0",
+    "@museumwnf/viewer-i18n": "^3.1.1",
+    "@museumwnf/viewer-layout": "^2.12.0",
     "vue": "^3.5.0",
     "vue-router": "^5.0.0"
   },
