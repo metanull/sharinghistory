@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { LinkListView } from '@metanull/viewer-layout/views'
+import { LinkListView } from '@museumwnf/viewer-layout/views'
 import { exhibitionTree } from '../composables/exhibitions.js'
 import { furtherReadingSpec } from '../composables/exhibitionSpecs.js'
 

@@ -1,13 +1,13 @@
 <script setup>
-// A thin mount of @metanull/viewer-layout's own SiteShell: the menu, the
+// A thin mount of @museumwnf/viewer-layout's own SiteShell: the menu, the
 // active entry and the footer text all come from `dataset.config.js`'s
 // `navigation` (SiteShell reads it through viewer-core's `useSiteConfig()`)
 // plus the footer text passed here; `$attrs` carries the language state
 // PageShell needs (`language`, `languages`, `update:language`) straight
 // through, the same as before. All this file still supplies is what a
 // config cannot — the header lockup markup — in the #brand slot.
-import { useI18n } from '@metanull/viewer-core'
-import { SiteShell } from '@metanull/viewer-layout/components'
+import { useI18n } from '@museumwnf/viewer-core'
+import { SiteShell } from '@museumwnf/viewer-layout/components'
 
 const { t } = useI18n()
 </script>

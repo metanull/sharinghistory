@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
-import { useI18n } from '@metanull/viewer-core'
-import { FacetSelect } from '@metanull/viewer-layout/content'
-import { CatalogueResultsView } from '@metanull/viewer-layout/views'
+import { useI18n } from '@museumwnf/viewer-core'
+import { FacetSelect } from '@museumwnf/viewer-layout/content'
+import { CatalogueResultsView } from '@museumwnf/viewer-layout/views'
 import { chapterOptions, collectionById, collectionTitle, exhibitionOptions, permanentCollection, themeOptions } from '../composables/catalogue.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 

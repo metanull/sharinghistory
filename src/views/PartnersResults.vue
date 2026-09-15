@@ -1,6 +1,6 @@
 <script setup>
-import { BackLink } from '@metanull/viewer-layout/content'
-import { PartnerListView } from '@metanull/viewer-layout/views'
+import { BackLink } from '@museumwnf/viewer-layout/content'
+import { PartnerListView } from '@museumwnf/viewer-layout/views'
 import { partnersList } from '../composables/partner.js'
 
 // `PartnerListView`'s own count (`spec.count`) sums only `main`/`associated`

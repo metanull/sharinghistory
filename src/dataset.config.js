@@ -1,4 +1,4 @@
-import { languageLabels, offeredLanguages, sectionMeta, useDataPackage } from '@metanull/viewer-core'
+import { languageLabels, offeredLanguages, sectionMeta, useDataPackage } from '@museumwnf/viewer-core'
 import SiteShell from './SiteShell.vue'
 import { OFFERED_LANGUAGES } from './languages.js'
 
@@ -25,7 +25,7 @@ const meta = sectionMeta()
 export default {
   // The dataset package this website renders. Must match the alias in
   // vite.config.js and the dependency in package.json.
-  datasetPackage: '@metanull/sharinghistory-data',
+  datasetPackage: '@museumwnf/sharinghistory-data',
 
   siteName: manifest.site?.names?.en ?? 'Sharing History',
 
@@ -48,7 +48,7 @@ export default {
 
   shell: SiteShell,
 
-  // The menu SiteShell (@metanull/viewer-layout/components) reads directly:
+  // The menu SiteShell (@museumwnf/viewer-layout/components) reads directly:
   // legacy's own top-level sections, in its own order — this site leads with
   // the exhibitions and adds the two historical sections. Each `section`
   // matches the route meta below, so the active entry follows `useSection()`

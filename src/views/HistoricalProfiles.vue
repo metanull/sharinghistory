@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
-import { I18nText, useI18n } from '@metanull/viewer-core'
-import { SectionCards } from '@metanull/viewer-layout/content'
+import { I18nText, useI18n } from '@museumwnf/viewer-core'
+import { SectionCards } from '@museumwnf/viewer-layout/content'
 import { historicalProfileCountries, historicalProfileNodeRoute, historicalProfilesTree } from '../composables/history.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 

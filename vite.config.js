@@ -1,6 +1,6 @@
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
-import { defineViewerConfig } from '@metanull/viewer-core/vite'
+import { defineViewerConfig } from '@museumwnf/viewer-core/vite'
 
 // The shared shape every website's vite.config.js needs — the data-package
 // alias, the optimizeDeps split that keeps a single copy of Vue in dev, and
@@ -8,7 +8,7 @@ import { defineViewerConfig } from '@metanull/viewer-core/vite'
 // (a plain-Node-safe module, separate from the `./testing` barrel that pulls
 // in the Vue runtime), instead of being duplicated here by hand.
 const viewerConfig = defineViewerConfig({
-  dataPackage: '@metanull/sharinghistory-data',
+  dataPackage: '@museumwnf/sharinghistory-data',
   plugins: [vue()],
 })
 

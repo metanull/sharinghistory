@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { byId, useCatalogueData, useDataPackage } from '@metanull/viewer-core'
+import { byId, useCatalogueData, useDataPackage } from '@museumwnf/viewer-core'
 import { exhibitionAncestry, exhibitionTree } from './exhibitions.js'
 
 // The website's records, read the one way every website reads them: through

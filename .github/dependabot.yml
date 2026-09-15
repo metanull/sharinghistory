@@ -2,24 +2,18 @@
 # so a release has time to be withdrawn before it reaches a site.
 version: 2
 updates:
-  # The @metanull platform packages are IGNORED here, and that is not a
-  # preference — Dependabot cannot read them at all.
+  # The @museumwnf platform packages (viewer-core, viewer-layout, viewer-i18n)
+  # and the site's own data package are IGNORED here, and that is no longer
+  # because Dependabot cannot reach them — they publish publicly to npmjs now,
+  # which Dependabot can read without a token like any other dependency.
   #
-  # GitHub Packages requires a token for every npm install, including of a
-  # PUBLIC package (viewer-core and viewer-layout are public and still fail).
-  # CI works because the run's own `github.token` carries the package's
-  # "Manage Actions access" grant; Dependabot runs outside that grant and
-  # inherits neither it nor the committed .npmrc, so it reports
-  # `private_source_authentication_failure` for every @metanull dependency.
-  #
-  # One unresolvable dependency aborts the WHOLE npm job. Leaving them listed
-  # therefore blocked every THIRD-PARTY update too — the estate went a week
-  # with no npm pull request on any site, and five sites had never had one.
-  # Ignoring them is what lets vue, vite, eslint and the rest flow again.
-  #
-  # Nothing is lost by it: no @metanull bump has ever been delivered here.
-  # They are updated by hand (`npm update @metanull/...`) until the scheduled
-  # platform-update workflow lands.
+  # They are ignored because they are updated deliberately, not opportunistically:
+  # a platform release is propagated to every consumer site as one PR right
+  # after the release, by `tools/propagate.mjs` in viewer-workflows. A
+  # Dependabot bump landing on its own schedule would race that procedure —
+  # updating this site out of step with the others, and possibly before a
+  # release has finished its own rollout — so it stays out of Dependabot's
+  # hands until that procedure itself is retired.
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -27,7 +21,7 @@ updates:
     cooldown:
       default-days: 7
     ignore:
-      - dependency-name: "@metanull/*"
+      - dependency-name: "@museumwnf/*"
 
   # The reusable workflows in metanull/viewer-workflows are pinned to an exact
   # version in .github/workflows/*.yml, never to a moving major tag. Dependabot

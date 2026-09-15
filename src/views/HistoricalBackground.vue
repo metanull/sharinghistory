@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { I18nText, useI18n } from '@metanull/viewer-core'
+import { I18nText, useI18n } from '@museumwnf/viewer-core'
 import {
   historicalPerspectives,
   historicalProfileCountries,

@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { centuryPresets, useI18n } from '@metanull/viewer-core'
+import { centuryPresets, useI18n } from '@museumwnf/viewer-core'
 import { exhibitionTree } from './exhibitions.js'
 import { useInventoryData } from './useInventoryData.js'
 

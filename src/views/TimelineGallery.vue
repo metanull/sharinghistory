@@ -1,7 +1,7 @@
 <script setup>
-import { useI18n } from '@metanull/viewer-core'
-import { BackLink } from '@metanull/viewer-layout/content'
-import { CatalogueResultsView } from '@metanull/viewer-layout/views'
+import { useI18n } from '@museumwnf/viewer-core'
+import { BackLink } from '@museumwnf/viewer-layout/content'
+import { CatalogueResultsView } from '@museumwnf/viewer-layout/views'
 import { timelineGallery } from '../composables/timeline.js'
 import { useInventoryData } from '../composables/useInventoryData.js'
 

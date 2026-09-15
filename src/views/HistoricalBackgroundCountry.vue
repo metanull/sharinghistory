@@ -1,9 +1,9 @@
 <script setup>
 import { computed, watchEffect } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useI18n } from '@metanull/viewer-core'
-import { SourceCredit } from '@metanull/viewer-layout/content'
-import { EssayView } from '@metanull/viewer-layout/views'
+import { useI18n } from '@museumwnf/viewer-core'
+import { SourceCredit } from '@museumwnf/viewer-layout/content'
+import { EssayView } from '@museumwnf/viewer-layout/views'
 import { historicalProfilesTree } from '../composables/history.js'
 import { historicalBackgroundCountrySpec } from '../composables/historySpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'

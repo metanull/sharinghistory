@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { NotFoundView, useI18n } from '@metanull/viewer-core'
-import { EssayView } from '@metanull/viewer-layout/views'
+import { NotFoundView, useI18n } from '@museumwnf/viewer-core'
+import { EssayView } from '@museumwnf/viewer-layout/views'
 import { exhibitionNodeRoute, inExhibitionTree } from '../composables/exhibitions.js'
 import { exhibitionThemeSpec } from '../composables/exhibitionSpecs.js'
 import { useInventoryData } from '../composables/useInventoryData.js'

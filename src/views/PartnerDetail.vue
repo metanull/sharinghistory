@@ -1,7 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import { PartnerMap, RecordLanguages, RelatedRecords } from '@metanull/viewer-layout/content'
-import { RecordView } from '@metanull/viewer-layout/views'
+import { PartnerMap, RecordLanguages, RelatedRecords } from '@museumwnf/viewer-layout/content'
+import { RecordView } from '@museumwnf/viewer-layout/views'
 import { useInventoryData } from '../composables/useInventoryData.js'
 import { heldItemRows, partnerSheet } from '../composables/partner.js'
 

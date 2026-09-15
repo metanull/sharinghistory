@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useCollectionTree } from '@metanull/viewer-core'
+import { useCollectionTree } from '@museumwnf/viewer-core'
 
 // The Historical Profiles subtree — a country's own record and its ordered
 // pages — and the Historical Background subtree — the general perspectives

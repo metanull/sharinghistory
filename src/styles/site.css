@@ -3,7 +3,7 @@
  * CSS (theme/tokens.css, the views' own scoped styles) reference. The
  * building blocks this file used to duplicate — the content box, section
  * heading, form table, buttons and back link — are now
- * @metanull/viewer-layout's shared content classes (.mwnf-panel,
+ * @museumwnf/viewer-layout's shared content classes (.mwnf-panel,
  * .mwnf-heading, .mwnf-form-table, .mwnf-button, .mwnf-select,
  * .mwnf-back-bar), themed through theme/tokens.css instead of duplicated
  * here.

@@ -1,4 +1,4 @@
-import { eventDateLabel, inDateRange } from '@metanull/viewer-core'
+import { eventDateLabel, inDateRange } from '@museumwnf/viewer-core'
 import { collectionTitle, DATE_MODE, inScope, itemSummary, objectsAndMonumentsSummary } from './catalogue.js'
 import { useInventoryData } from './useInventoryData.js'
 
